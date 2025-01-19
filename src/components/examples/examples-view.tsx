@@ -1,113 +1,198 @@
-import { Text, Button, TextInput, Stack, Title, Group, Anchor } from '@mantine/core';
-import { Trans, useTranslation } from 'react-i18next';
+import { ArrowLeft } from 'lucide-react'
+import { useTranslation } from 'react-i18next';
+import { Header } from '../header';
+import { Text, Stack, Button, Alert } from '@mantine/core';
 import * as fs from '@tauri-apps/api/fs';
 import * as shell from '@tauri-apps/api/shell';
+import * as path from '@tauri-apps/api/path';
 import { invoke } from '@tauri-apps/api/tauri';
 import { notifications } from '@mantine/notifications';
-import { appWindow } from '@tauri-apps/api/window';
-import { APP_NAME, RUNNING_IN_TAURI, useMinWidth, useTauriContext } from '../../tauri/TauriProvider';
-import { createStorage } from '../../tauri/storage';
+import { RUNNING_IN_TAURI, useTauriContext } from '../../tauri/TauriProvider';
 import { notify } from '../../common/utils';
-
-import { ArrowLeft } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 
 interface ExamplesViewProps {
   onBack: () => void;
 }
 
-function toggleFullscreen() {
-  appWindow.isFullscreen().then(x => appWindow.setFullscreen(!x));
-}
-
 export function ExamplesView({ onBack }: ExamplesViewProps) {
-  const navigate = useNavigate();
-
-  const handleBack = () => {
-    navigate('/');
-    onBack();
-  };
   const { t } = useTranslation();
-  const { fileSep, documents, downloads } = useTauriContext();
-
-  // Add console.log for debugging
-  console.log('ExamplesView rendering', { fileSep, documents, downloads });
-
-  const storeName = `${documents}${APP_NAME}${fileSep}example_view.dat`;
-  const { use: useKVP, loading } = createStorage(storeName);
-  const [exampleData, setExampleData] = useKVP('exampleKey', '');
-
-  useMinWidth(1000);
+  const { downloads } = useTauriContext();
+  const [error, setError] = useState<string | null>(null);
+  const [isCreatingFile, setIsCreatingFile] = useState(false);
+  const [debugInfo, setDebugInfo] = useState<string>('');
 
   async function createFile() {
-    if (RUNNING_IN_TAURI) {
-      const filePath = `${downloads}/example_file.txt`;
-      await fs.writeTextFile('example_file.txt', 'This is from TAURI!\n', { dir: fs.BaseDirectory.Download });
-      await shell.open(downloads!);
-      await invoke('process_file', { filepath: filePath }).then(msg => {
-        notify('Message from Rust', msg as string);
-        notifications.show({ title: 'Message from Rust', message: msg as string });
+    if (!RUNNING_IN_TAURI) {
+      setError('This feature is only available in the desktop app');
+      return;
+    }
+
+    setIsCreatingFile(true);
+    setError(null);
+    setDebugInfo('');
+
+    try {
+      // 获取目标目录路径
+      let targetDir: string;
+      let baseDir: fs.BaseDirectory;
+
+      if (downloads) {
+        targetDir = downloads;
+        baseDir = fs.BaseDirectory.Download;
+        setDebugInfo(prev => prev + `\nFound downloads dir: ${downloads}`);
+
+        // 检查下载目录是否存在
+        try {
+          const exists = await fs.exists('', { dir: fs.BaseDirectory.Download });
+          setDebugInfo(prev => prev + `\nDownloads directory exists: ${exists}`);
+
+          if (!exists) {
+            setDebugInfo(prev => prev + '\nTrying to create downloads directory...');
+            await fs.createDir('', {
+              dir: fs.BaseDirectory.Download,
+              recursive: true
+            });
+          }
+        } catch (e) {
+          setDebugInfo(prev => prev + `\nError checking/creating downloads dir: ${e}`);
+          throw e;
+        }
+      } else {
+        // 使用用户主目录
+        targetDir = await path.homeDir();
+        baseDir = fs.BaseDirectory.Home;
+        setDebugInfo(prev => prev + `\nUsing home directory: ${targetDir}`);
+      }
+
+      // 创建文件
+      const filename = 'example_file.txt';
+      setDebugInfo(prev => prev + `\nAttempting to create file: ${filename}`);
+
+      const content = 'This is a test file from Tauri!\n' +
+        'Created at: ' + new Date().toLocaleString();
+
+      try {
+        await fs.writeTextFile(filename, content, { dir: baseDir });
+        setDebugInfo(prev => prev + '\nFile written successfully');
+      } catch (e) {
+        setDebugInfo(prev => prev + `\nError writing file: ${e}`);
+        throw e;
+      }
+
+      const filePath = `${targetDir}${filename}`;
+      setDebugInfo(prev => prev + `\nFull file path: ${filePath}`);
+
+      // 调用 Rust 后端处理文件
+      try {
+        const response = await invoke('process_file', { filepath: filePath });
+        setDebugInfo(prev => prev + `\nRust process response: ${response}`);
+      } catch (e) {
+        setDebugInfo(prev => prev + `\nError from Rust process: ${e}`);
+        throw e;
+      }
+
+      // 尝试打开目录
+      try {
+        await shell.open(targetDir);
+        setDebugInfo(prev => prev + '\nOpened directory successfully');
+      } catch (e) {
+        setDebugInfo(prev => prev + `\nError opening directory: ${e}`);
+        // 不抛出错误，因为文件已经创建成功
+        console.warn('Failed to open directory:', e);
+      }
+
+      notifications.show({
+        title: 'Success',
+        message: `File created at: ${filePath}`,
+        color: 'green'
       });
+
+    } catch (err) {
+      const errorMessage = err instanceof Error
+        ? `${err.name}: ${err.message}`
+        : String(err);
+
+      console.error('Failed to create file:', err);
+      setError(`${errorMessage}\n\nDebug info: ${debugInfo}`);
+
+      notifications.show({
+        title: 'Error',
+        message: errorMessage,
+        color: 'red'
+      });
+    } finally {
+      setIsCreatingFile(false);
     }
   }
 
-  if (loading) {
-    return <div className="flex-1 p-6 text-white">Loading...</div>;
-  }
-
   return (
-    <div className="flex-1 p-6">
-      <div className="bg-gray-800 rounded-lg p-6 mb-6">
+    <div className="flex-1 flex flex-col h-full">
+      <Header>
         <button
-          onClick={handleBack}
-          className="flex items-center text-gray-400 hover:text-white"
+          onClick={onBack}
+          className="p-2 hover:bg-gray-800 rounded-lg text-gray-400 hover:text-white"
         >
-          <ArrowLeft className="w-5 h-5 mr-2" />
-          Back to Chat
+          <ArrowLeft className="w-5 h-5" />
         </button>
-        <Title order={4} className="text-white mb-4">Tauri Framework Examples</Title>
+        <div className="ml-4">
+          <span className="text-sm font-medium">Examples</span>
+        </div>
+      </Header>
 
-        <Stack gap="md">
-          <Group>
-            <Button onClick={createFile} className="bg-blue-600 hover:bg-blue-700">
-              Create File Example
-            </Button>
-            <Button onClick={toggleFullscreen} className="bg-blue-600 hover:bg-blue-700">
-              Toggle Fullscreen
-            </Button>
-            <Button
-              onClick={() => notifications.show({
-                title: 'Notification Example',
-                message: 'This is a test notification'
-              })}
-              className="bg-blue-600 hover:bg-blue-700"
+      <div className="flex-1 overflow-y-auto p-6">
+        <Stack gap="lg">
+          <Text size="xl" fw={600}>
+            {t('Modern Desktop App Examples')}
+          </Text>
+
+          {error && (
+            <Alert
+              title="Error"
+              color="red"
+              withCloseButton
+              onClose={() => setError(null)}
             >
-              Show Notification
-            </Button>
-          </Group>
+              <pre style={{ whiteSpace: 'pre-wrap', wordWrap: 'break-word' }}>
+                {error}
+              </pre>
+            </Alert>
+          )}
 
-          <div className="space-y-4">
-            <Title order={4} className="text-white">Translation Example</Title>
-            <Trans
-              i18nKey='transExample'
-              values={{ variable: '/elibroftw/modern-desktop-template' }}
-              components={[
-                <Anchor href="https://github.com/elibroftw/modern-desktop-app-template" />
-              ]}
-              default='Template is at <0>github.com{{variable}}</0>'
-              t={t}
-            />
-          </div>
+          <Button
+            color="blue"
+            onClick={createFile}
+            loading={isCreatingFile}
+            disabled={isCreatingFile}
+          >
+            {isCreatingFile ? 'Creating File...' : 'Create Test File'}
+          </Button>
 
-          <div>
-            <Text className="text-gray-300 mb-2">Persistent Data Example:</Text>
-            <TextInput
-              value={exampleData}
-              onChange={e => setExampleData(e.currentTarget.value)}
-              placeholder="Type something to save..."
-              className="max-w-md"
-            />
-          </div>
+          <Button
+            color="green"
+            onClick={() => notifications.show({
+              title: 'Test Notification',
+              message: 'This is a test notification'
+            })}
+          >
+            Show Notification
+          </Button>
+
+          <Text c="dimmed" size="sm">
+            These are examples of Tauri's native capabilities.
+            {downloads
+              ? `Files will be created in your Downloads directory: ${downloads}`
+              : 'Files will be created in your home directory since Downloads is not available.'
+            }
+          </Text>
+
+          {debugInfo && (
+            <Alert title="Debug Info" color="blue">
+              <pre style={{ whiteSpace: 'pre-wrap', wordWrap: 'break-word' }}>
+                {debugInfo}
+              </pre>
+            </Alert>
+          )}
         </Stack>
       </div>
     </div>

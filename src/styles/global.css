@@ -3,45 +3,213 @@
 @tailwind utilities;
 
 :root {
-    --titlebar-height: 28px;
+  color-scheme: light dark;
+
+  /* Light theme colors */
+  --color-primary: #3b82f6;
+  --color-primary-hover: #2563eb;
+  --color-background: #ffffff;
+  --color-secondary-background: #f3f4f6;
+  --color-text: #111827;
+  --color-text-secondary: #4b5563;
+  --color-border: #e5e7eb;
+  --color-card: #ffffff;
+  --color-card-hover: #f9fafb;
+  --color-header: rgba(255, 255, 255, 0.8);
+  --color-sidebar: #f3f4f6;
+  --color-sidebar-hover: #e5e7eb;
+  --color-input: #f9fafb;
+  --color-input-hover: #f3f4f6;
+  --color-button: #e5e7eb;
+  --color-button-hover: #d1d5db;
 }
 
-html,
-body,
-#root {
-    height: 100vh;
-    margin: 0;
-    padding: 0;
+.dark {
+  /* Dark theme colors */
+  --color-primary: #3b82f6;
+  --color-primary-hover: #60a5fa;
+  --color-background: #111827;
+  --color-secondary-background: #1f2937;
+  --color-text: #f9fafb;
+  --color-text-secondary: #9ca3af;
+  --color-border: #374151;
+  --color-card: #1f2937;
+  --color-card-hover: #374151;
+  --color-header: rgba(17, 24, 39, 0.8);
+  --color-sidebar: #1f2937;
+  --color-sidebar-hover: #374151;
+  --color-input: #374151;
+  --color-input-hover: #4b5563;
+  --color-button: #374151;
+  --color-button-hover: #4b5563;
 }
 
-@layer base {
-    :root {
-        --mantine-color-body: theme('colors.gray.900');
-    }
+/* Base styles */
+html {
+  scroll-behavior: smooth;
 }
 
+body {
+  background-color: var(--color-background);
+  color: var(--color-text);
+  transition: background-color 0.3s ease, color 0.3s ease;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* Custom scrollbar */
 ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+  width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-    background: theme('colors.gray.900');
+  background: var(--color-secondary-background);
 }
 
 ::-webkit-scrollbar-thumb {
-    background: theme('colors.gray.700');
-    border-radius: 4px;
+  background: var(--color-button);
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: theme('colors.gray.600');
+  background: var(--color-button-hover);
 }
 
-.app-region-drag {
-    -webkit-app-region: drag;
+/* Component styles */
+.header {
+  background-color: var(--color-header);
+  border-bottom: 1px solid var(--color-border);
+  backdrop-filter: blur(8px);
 }
 
-.app-region-no-drag {
-    -webkit-app-region: no-drag;
+.sidebar {
+  background-color: var(--color-sidebar);
+  border-right: 1px solid var(--color-border);
+}
+
+.card {
+  background-color: var(--color-card);
+  border: 1px solid var(--color-border);
+  transition: all 0.2s ease;
+}
+
+.card:hover {
+  background-color: var(--color-card-hover);
+}
+
+/* Input styles */
+input,
+textarea,
+select {
+  background-color: var(--color-input);
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+}
+
+input:hover,
+textarea:hover,
+select:hover {
+  background-color: var(--color-input-hover);
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Button styles */
+button {
+  background-color: var(--color-button);
+  color: var(--color-text);
+  transition: all 0.2s ease;
+}
+
+button:hover {
+  background-color: var(--color-button-hover);
+}
+
+button.primary {
+  background-color: var(--color-primary);
+  color: white;
+}
+
+button.primary:hover {
+  background-color: var(--color-primary-hover);
+}
+
+/* Link styles */
+a {
+  color: var(--color-primary);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+a:hover {
+  color: var(--color-primary-hover);
+}
+
+/* Selection styles */
+::selection {
+  background-color: var(--color-primary);
+  color: white;
+}
+
+/* Focus styles */
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Transition classes */
+.transition-colors {
+  transition-property: background-color, border-color, color, fill, stroke;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 300ms;
+}
+
+/* Typography scale */
+.text-xs {
+  font-size: 0.75rem;
+  line-height: 1rem;
+}
+
+.text-sm {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}
+
+.text-base {
+  font-size: 1rem;
+  line-height: 1.5rem;
+}
+
+.text-lg {
+  font-size: 1.125rem;
+  line-height: 1.75rem;
+}
+
+.text-xl {
+  font-size: 1.25rem;
+  line-height: 1.75rem;
+}
+
+.text-2xl {
+  font-size: 1.5rem;
+  line-height: 2rem;
+}
+
+/* Utility classes */
+.backdrop-blur {
+  backdrop-filter: blur(8px);
+}
+
+.glass-effect {
+  background: rgba(var(--color-background), 0.7);
+  backdrop-filter: blur(8px);
 }
