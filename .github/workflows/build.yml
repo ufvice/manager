@@ -27,6 +27,7 @@ jobs:
     outputs:
       changelog: ${{ steps.build_changelog.outputs.changelog }}
   build-arm:
+    if: false # disable this job
     runs-on: ubuntu-latest
     steps:
     - name: Checkout repository
@@ -67,6 +68,8 @@ jobs:
         platform: [macos-latest, ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.platform }}
     needs: [changelog]
+    if: | # only build on windows
+      matrix.platform == 'windows-latest' || false
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
