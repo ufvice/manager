@@ -3,7 +3,7 @@ import { MainSidebar } from "./main-sidebar"
 import { SecondarySidebar } from "./secondary-sidebar"
 import { MainContent } from "./main-content"
 import { Routes, Route, Navigate } from "react-router-dom"
-import { ExamplesView } from "../examples/examples-view"
+import { ExamplesView } from "../../views/ExampleView"
 
 export function AppShell() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)

@@ -1,65 +1,166 @@
-// component example
-import { Text, Anchor, Space, Button, Title, TextInput, Stack } from '@mantine/core';
-import { Trans, useTranslation } from 'react-i18next';
-
+import { ArrowLeft } from 'lucide-react'
+import { useTranslation } from 'react-i18next';
+import { Header } from '../components/header';
+import { Text, Stack, Button, Alert } from '@mantine/core';
 import * as fs from '@tauri-apps/api/fs';
 import * as shell from '@tauri-apps/api/shell';
-import { invoke } from '@tauri-apps/api/tauri'
-
+import { invoke } from '@tauri-apps/api/tauri';
 import { notifications } from '@mantine/notifications';
-import { APP_NAME, RUNNING_IN_TAURI, useMinWidth, useTauriContext } from '../tauri/TauriProvider';
-import { appWindow } from '@tauri-apps/api/window'
-import { createStorage } from '../tauri/storage';
+import { RUNNING_IN_TAURI, useTauriContext } from '../tauri/TauriProvider';
 import { notify } from '../common/utils';
+import { useState } from 'react';
+import { getCurrent } from '@tauri-apps/api/window';
 
-
-function toggleFullscreen() {
-  appWindow.isFullscreen().then(x => appWindow.setFullscreen(!x));
+interface ExamplesViewProps {
+  onBack: () => void;
 }
 
-export default function ExampleView() {
+export function ExamplesView({ onBack }: ExamplesViewProps) {
   const { t } = useTranslation();
-  const { fileSep, documents, downloads } = useTauriContext();
-  // store-plugin will create necessary directories
-  const storeName = `${documents}${APP_NAME}${fileSep}example_view.dat`;
-  // const storeName = 'data.dat';
-  const { use: useKVP, loading, data } = createStorage(storeName);
-  const [exampleData, setExampleData] = useKVP('exampleKey', '');
+  const { downloads } = useTauriContext();
+  const [error, setError] = useState<string | null>(null);
+  const [isCreatingFile, setIsCreatingFile] = useState(false);
+  const [debugInfo, setDebugInfo] = useState<string>('');
 
-  useMinWidth(1000);
+  async function toggleFullscreen() {
+    const appWindow = await getCurrent();
+    await appWindow.isFullscreen().then((isCurrentlyFullscreen: boolean) => appWindow.setFullscreen(!isCurrentlyFullscreen));
+  }
 
-  // fs example
   async function createFile() {
-    // run only in desktop/tauri env
-    if (RUNNING_IN_TAURI) {
-      // https://tauri.app/v1/api/js/modules/fs
-      const filePath = `${downloads}/example_file.txt`;
-      await fs.writeTextFile('example_file.txt', 'oh this is from TAURI! COOLIO.\n', { dir: fs.BaseDirectory.Download });
-      // show in file explorer: https://github.com/tauri-apps/tauri/issues/4062
-      await shell.open(downloads!);
-      await invoke('process_file', { filepath: filePath }).then(msg => {
-        console.log(msg === 'Hello from Rust!')
-        notify('Message from Rust', msg as string);
-        notifications.show({ title: 'Message from Rust', message: msg as string });
+    if (!RUNNING_IN_TAURI) {
+      setError('This feature is only available in the desktop app');
+      return;
+    }
+
+    setIsCreatingFile(true);
+    setError(null);
+    setDebugInfo('');
+
+    try {
+      const filename = 'example_file.txt';
+      const content = 'This is a test file from Tauri!\n' +
+        'Created at: ' + new Date().toLocaleString();
+
+      // Write file using BaseDirectory
+      await fs.writeTextFile(filename, content, {
+        dir: fs.BaseDirectory.Download
       });
+      setDebugInfo(prev => prev + '\nFile written successfully');
+
+      // Process file using the full path for Rust function
+      const filePath = `${downloads}/example_file.txt`;
+      const response = await invoke('process_file', {
+        filepath: filePath
+      });
+      setDebugInfo(prev => prev + `\nRust process response: ${response}`);
+
+      // Open downloads directory
+      await shell.open(downloads!);
+      setDebugInfo(prev => prev + '\nOpened directory successfully');
+
+      // Show notifications in both system tray and app
+      notify('Success', `File created at: ${filePath}`);
+      notifications.show({
+        title: 'Success',
+        message: `File created at: ${filePath}`,
+        color: 'green'
+      });
+
+    } catch (err) {
+      const errorMessage = err instanceof Error
+        ? `${err.name}: ${err.message}`
+        : String(err);
+
+      console.error('Failed to create file:', err);
+      setError(`${errorMessage}\n\nDebug info: ${debugInfo}`);
+
+      notifications.show({
+        title: 'Error',
+        message: errorMessage,
+        color: 'red'
+      });
+    } finally {
+      setIsCreatingFile(false);
     }
   }
-  // <> is an alias for <React.Fragment>
-  return !loading && <Stack>
-    <Text>{t('Modern Desktop App Examples')}</Text>
 
-    <Button onClick={createFile}>Do something with fs</Button>
+  return (
+    <div className="flex-1 flex flex-col h-full">
+      <Header>
+        <button
+          onClick={onBack}
+          className="p-2 hover:bg-gray-800 rounded-lg text-gray-400 hover:text-white"
+        >
+          <ArrowLeft className="w-5 h-5" />
+        </button>
+        <div className="ml-4">
+          <span className="text-sm font-medium">Examples</span>
+        </div>
+      </Header>
 
-    <Button onClick={toggleFullscreen}>Toggle Fullscreen</Button>
+      <div className="flex-1 overflow-y-auto p-6">
+        <Stack gap="lg">
+          <Text size="xl" fw={600}>
+            {t('Modern Desktop App Examples')}
+          </Text>
 
-    <Button onClick={() => notifications.show({ title: 'Mantine Notification', message: 'test v6 breaking change' })}>Notification example</Button>
+          {error && (
+            <Alert
+              title="Error"
+              color="red"
+              withCloseButton
+              onClose={() => setError(null)}
+            >
+              <pre style={{ whiteSpace: 'pre-wrap', wordWrap: 'break-word' }}>
+                {error}
+              </pre>
+            </Alert>
+          )}
 
-    <Title order={4}>{t('Interpolating components in translations')}</Title>
-    <Trans i18nKey='transExample'
-      values={{ variable: '/elibroftw/modern-desktop-template' }}
-      components={[<Anchor href="https://github.com/elibroftw/modern-desktop-app-template" />]}
-      // optional stuff:
-      default='FALLBACK if key does not exist. This template is located on <0>github.com{{variable}}</0>' t={t} />
-    <TextInput label={t('Persistent data')} value={exampleData} onChange={e => setExampleData(e.currentTarget.value)} />
-  </Stack>
+          <Button
+            color="blue"
+            onClick={createFile}
+            loading={isCreatingFile}
+            disabled={isCreatingFile}
+          >
+            {isCreatingFile ? 'Creating File...' : 'Create Test File'}
+          </Button>
+
+          <Button
+            color="teal"
+            onClick={toggleFullscreen}
+          >
+            Toggle Fullscreen
+          </Button>
+
+          <Button
+            color="green"
+            onClick={() => notifications.show({
+              title: 'Test Notification',
+              message: 'This is a test notification'
+            })}
+          >
+            Show Notification
+          </Button>
+
+          <Text c="dimmed" size="sm">
+            These are examples of Tauri's native capabilities.
+            {downloads
+              ? `Files will be created in your Downloads directory: ${downloads}`
+              : 'Files will be created in your home directory since Downloads is not available.'
+            }
+          </Text>
+
+          {debugInfo && (
+            <Alert title="Debug Info" color="blue">
+              <pre style={{ whiteSpace: 'pre-wrap', wordWrap: 'break-word' }}>
+                {debugInfo}
+              </pre>
+            </Alert>
+          )}
+        </Stack>
+      </div>
+    </div>
+  );
 }
