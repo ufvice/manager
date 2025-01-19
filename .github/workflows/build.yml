@@ -74,8 +74,9 @@ jobs:
       # build the changelog based on the commit messages between the versioned tags
       - name: Install pnpm
         uses: pnpm/action-setup@v4
-        with:
-          version: 9
+        # 移除 version 配置，让它使用 package.json 中的版本
+        # with:
+        #   version: 9
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
