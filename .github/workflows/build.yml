@@ -65,11 +65,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform: [macos-latest, ubuntu-latest, windows-latest]
+        platform: [windows-latest] #, ubuntu-latest, macos-latest]
     runs-on: ${{ matrix.platform }}
     needs: [changelog]
-    if: | # only build on windows
-      matrix.platform == 'windows-latest' || false
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
