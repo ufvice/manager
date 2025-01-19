@@ -8,7 +8,7 @@ interface HeaderProps {
 export function Header({ children }: HeaderProps) {
   const { theme, toggleTheme } = useTheme();
   return (
-    <header className="flex items-center p-4 border-b transition-colors duration-200">
+    <header className="flex items-center p-4 border-b border-light-border dark:border-dark-border transition-colors duration-200">
       {children}
       <button
         onClick={toggleTheme}

@@ -17,8 +17,11 @@ export function NavigationItem({
   return (
     <div
       className={cn(
-        "flex flex-col items-center justify-center w-full p-3 rounded-lg hover:bg-gray-800 text-gray-400 hover:text-white transition-colors",
-        isActive && "bg-gray-800 text-white"
+        "flex flex-col items-center justify-center w-full p-3 rounded-lg",
+        "hover:bg-light-accent dark:hover:bg-dark-accent",
+        "text-light-text/50 dark:text-dark-text/50",
+        "hover:text-light-text dark:hover:text-dark-text",
+        isActive && "bg-light-accent dark:bg-dark-accent text-light-text dark:text-dark-text"
       )}
       title={label}
     >

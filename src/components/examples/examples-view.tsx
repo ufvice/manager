@@ -10,6 +10,7 @@ import { notifications } from '@mantine/notifications';
 import { RUNNING_IN_TAURI, useTauriContext } from '../../tauri/TauriProvider';
 import { notify } from '../../common/utils';
 import { useState } from 'react';
+import { resolve } from '@tauri-apps/api/path';
 
 interface ExamplesViewProps {
   onBack: () => void;
@@ -33,81 +34,45 @@ export function ExamplesView({ onBack }: ExamplesViewProps) {
     setDebugInfo('');
 
     try {
-      // 获取目标目录路径
-      let targetDir: string;
-      let baseDir: fs.BaseDirectory;
-
-      if (downloads) {
-        targetDir = downloads;
-        baseDir = fs.BaseDirectory.Download;
-        setDebugInfo(prev => prev + `\nFound downloads dir: ${downloads}`);
-
-        // 检查下载目录是否存在
-        try {
-          const exists = await fs.exists('', { dir: fs.BaseDirectory.Download });
-          setDebugInfo(prev => prev + `\nDownloads directory exists: ${exists}`);
-
-          if (!exists) {
-            setDebugInfo(prev => prev + '\nTrying to create downloads directory...');
-            await fs.createDir('', {
-              dir: fs.BaseDirectory.Download,
-              recursive: true
-            });
-          }
-        } catch (e) {
-          setDebugInfo(prev => prev + `\nError checking/creating downloads dir: ${e}`);
-          throw e;
-        }
-      } else {
-        // 使用用户主目录
-        targetDir = await path.homeDir();
-        baseDir = fs.BaseDirectory.Home;
-        setDebugInfo(prev => prev + `\nUsing home directory: ${targetDir}`);
-      }
-
-      // 创建文件
       const filename = 'example_file.txt';
-      setDebugInfo(prev => prev + `\nAttempting to create file: ${filename}`);
-
       const content = 'This is a test file from Tauri!\n' +
         'Created at: ' + new Date().toLocaleString();
+      const baseDir = fs.BaseDirectory.Download;
 
       try {
+        const exists = await fs.exists('', { dir: baseDir });
+        setDebugInfo(prev => prev + `\nDownloads directory exists: ${exists}`);
+
+        if (!exists) {
+          await fs.createDir('', { dir: baseDir, recursive: true });
+          setDebugInfo(prev => prev + '\nCreated downloads directory');
+        }
+
+        // Write file using BaseDirectory
         await fs.writeTextFile(filename, content, { dir: baseDir });
         setDebugInfo(prev => prev + '\nFile written successfully');
-      } catch (e) {
-        setDebugInfo(prev => prev + `\nError writing file: ${e}`);
-        throw e;
-      }
 
-      const filePath = `${targetDir}${filename}`;
-      setDebugInfo(prev => prev + `\nFull file path: ${filePath}`);
+        // Get full path only when needed for Rust function
+        const filePath = await resolve(filename, baseDir);
+        setDebugInfo(prev => prev + `\nResolved file path: ${filePath}`);
 
-      // 调用 Rust 后端处理文件
-      try {
+        // Process file using Rust
         const response = await invoke('process_file', { filepath: filePath });
         setDebugInfo(prev => prev + `\nRust process response: ${response}`);
+
+        // Open directory using BaseDirectory
+        await shell.open('.', { dir: baseDir });
+        setDebugInfo(prev => prev + '\nOpened directory successfully');
+
+        notifications.show({
+          title: 'Success',
+          message: `File created successfully`,
+          color: 'green'
+        });
       } catch (e) {
-        setDebugInfo(prev => prev + `\nError from Rust process: ${e}`);
+        setDebugInfo(prev => prev + `\nError: ${e}`);
         throw e;
       }
-
-      // 尝试打开目录
-      try {
-        await shell.open(targetDir);
-        setDebugInfo(prev => prev + '\nOpened directory successfully');
-      } catch (e) {
-        setDebugInfo(prev => prev + `\nError opening directory: ${e}`);
-        // 不抛出错误，因为文件已经创建成功
-        console.warn('Failed to open directory:', e);
-      }
-
-      notifications.show({
-        title: 'Success',
-        message: `File created at: ${filePath}`,
-        color: 'green'
-      });
-
     } catch (err) {
       const errorMessage = err instanceof Error
         ? `${err.name}: ${err.message}`
@@ -127,11 +92,11 @@ export function ExamplesView({ onBack }: ExamplesViewProps) {
   }
 
   return (
-    <div className="flex-1 flex flex-col h-full">
+    <div className="flex-1 flex flex-col h-full bg-light-bg dark:bg-dark-bg">
       <Header>
         <button
           onClick={onBack}
-          className="p-2 hover:bg-gray-800 rounded-lg text-gray-400 hover:text-white"
+          className="p-2 hover:bg-light-accent dark:hover:bg-dark-accent rounded-lg text-light-text/50 dark:text-dark-text/50 hover:text-light-text dark:hover:text-dark-text"
         >
           <ArrowLeft className="w-5 h-5" />
         </button>

@@ -21,8 +21,7 @@ export function MainSidebar({ isCollapsed }: MainSidebarProps) {
   const navigate = useNavigate();
 
   return (
-    <div className={`${isCollapsed ? "w-16" : "w-20"
-      } flex flex-col bg-gray-950 border-r border-gray-800 transition-all duration-300`}>
+    <div className={`${isCollapsed ? "w-16" : "w-20"} flex flex-col bg-light-sidebar dark:bg-dark-sidebar border-r border-light-border dark:border-dark-border`}>
       <nav className="flex flex-col py-4 gap-2">
         {navigationItems.map((item) => (
           <div

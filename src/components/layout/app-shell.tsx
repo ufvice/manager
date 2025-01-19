@@ -9,7 +9,7 @@ export function AppShell() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
 
   return (
-    <div className="flex h-screen bg-gray-900 text-white">
+    <div className="flex h-screen bg-light-bg dark:bg-dark-bg text-light-text dark:text-dark-text">
       <MainSidebar isCollapsed={isSidebarCollapsed} />
       <SecondarySidebar isCollapsed={isSidebarCollapsed} />
       <Routes>

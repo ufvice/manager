@@ -8,7 +8,7 @@ export default function App() {
   return (
     <>
       {usingCustomTitleBar && <TitleBar />}
-      <div className="h-screen bg-gray-900">
+      <div className="h-screen bg-light-bg dark:bg-dark-bg">
         <AppShell />
       </div>
     </>

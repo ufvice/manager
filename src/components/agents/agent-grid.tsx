@@ -11,10 +11,10 @@ export function AgentGrid() {
   return (
     <div>
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-lg font-semibold">Your AI agents</h2>
+        <h2 className="text-lg font-semibold text-light-text dark:text-dark-text">Your AI agents</h2>
         <div className="flex gap-4">
-          <button className="text-blue-500 text-sm hover:underline">Edit</button>
-          <button className="text-blue-500 text-sm hover:underline">
+          <button className="text-blue-500 dark:text-blue-400 text-sm hover:underline">Edit</button>
+          <button className="text-blue-500 dark:text-blue-400 text-sm hover:underline">
             View all (18)
           </button>
         </div>

@@ -13,7 +13,7 @@ export function MainContent({ isSidebarCollapsed, onToggleSidebar }: MainContent
     <div className="flex-1 flex flex-col">
       <Header>
         <button
-          className="p-2 hover:bg-gray-800 rounded-lg text-gray-400 hover:text-white"
+          className="p-2 hover:bg-light-accent dark:hover:bg-dark-accent rounded-lg text-light-text/50 dark:text-dark-text/50 hover:text-light-text dark:hover:text-dark-text"
           onClick={onToggleSidebar}
         >
           {isSidebarCollapsed ? (
