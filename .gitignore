@@ -27,3 +27,7 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 stats.html
+.aider*
+.env
+*:Zone.Identifier
+map.txt

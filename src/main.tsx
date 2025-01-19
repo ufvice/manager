@@ -1,9 +1,9 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
-import App from './App.js';
-import Providers from './Providers.jsx';
-import './translations/i18n.js'; // for internationalization (translations)
-
+import App from './App';
+import Providers from './Providers';
+import './translations/i18n';
+import './styles/global.css';
 
 const root = createRoot(document.getElementById('root')!);
 root.render(

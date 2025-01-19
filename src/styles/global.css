@@ -1,0 +1,47 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+    --titlebar-height: 28px;
+}
+
+html,
+body,
+#root {
+    height: 100vh;
+    margin: 0;
+    padding: 0;
+}
+
+@layer base {
+    :root {
+        --mantine-color-body: theme('colors.gray.900');
+    }
+}
+
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: theme('colors.gray.900');
+}
+
+::-webkit-scrollbar-thumb {
+    background: theme('colors.gray.700');
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: theme('colors.gray.600');
+}
+
+.app-region-drag {
+    -webkit-app-region: drag;
+}
+
+.app-region-no-drag {
+    -webkit-app-region: no-drag;
+}

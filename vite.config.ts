@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 // import topLevelAwait from 'vite-plugin-top-level-await';
+import path from 'path';
 import { visualizer } from 'rollup-plugin-visualizer';
 import removeConsole from 'vite-plugin-remove-console';
 // https://vitejs.dev/config/
@@ -15,6 +16,11 @@ export default defineConfig({
     visualizer(),
     // removeConsole({includes: ['log', 'assert', 'info', 'error']})
   ],
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src')
+    }
+  },
   // prevent vite from obscuring rust errors
   clearScreen: false,
   // Tauri expects a fixed port, fail if that port is not available
