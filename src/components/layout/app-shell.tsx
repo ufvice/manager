@@ -4,6 +4,7 @@ import { SecondarySidebar } from "./secondary-sidebar"
 import { MainContent } from "./main-content"
 import { Routes, Route, Navigate } from "react-router-dom"
 import { ExamplesView } from "../../views/ExampleView"
+import { ModelsView } from "../../views/ModelsView"
 
 export function AppShell() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
@@ -28,6 +29,14 @@ export function AppShell() {
             <ExamplesView
               onBack={() => setIsSidebarCollapsed(false)}
             />
+          }
+        />
+        <Route
+          path="/models"
+          element={
+            <div className="flex-1 overflow-hidden">
+              <ModelsView />
+            </div>
           }
         />
         <Route path="*" element={<Navigate to="/" replace />} />

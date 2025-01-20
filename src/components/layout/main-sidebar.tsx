@@ -1,4 +1,4 @@
-import { MessageSquare, Bot, FileText, Puzzle, Box, Settings, Beaker } from 'lucide-react'
+import { MessageSquare, Bot, FileText, Puzzle, Box, Settings, Beaker, Database } from 'lucide-react'
 import { NavigationItem } from "../navigation/navigation-item"
 import { useLocation, useNavigate } from 'react-router-dom'
 
@@ -14,6 +14,7 @@ const navigationItems = [
   { icon: Box, label: "Models", path: "/models" },
   { icon: Beaker, label: "Examples", path: "/examples" },
   { icon: Settings, label: "Settings", path: "/settings" },
+  { icon: Database, label: "Storage Demo", path: "/storage-demo" }
 ]
 
 export function MainSidebar({ isCollapsed }: MainSidebarProps) {
