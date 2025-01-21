@@ -1,19 +1,26 @@
-import { MessageSquare, Search } from 'lucide-react'
-import { ChatList } from "../chat/chat-list"
+// src/components/layout/secondary-sidebar.tsx
+import { MessageSquare, Search } from 'lucide-react';
+import { ChatList } from "../chat/ChatList";
+import { useChatStore } from '../../store/chatStore';
 
 interface SecondarySidebarProps {
-  isCollapsed: boolean
+  isCollapsed: boolean;
 }
 
 export function SecondarySidebar({ isCollapsed }: SecondarySidebarProps) {
+  const { createChat } = useChatStore();
+
   if (isCollapsed) {
-    return null
+    return null;
   }
 
   return (
     <div className="w-80 flex flex-col border-r border-light-border dark:border-dark-border bg-light-sidebar dark:bg-dark-sidebar">
       <div className="p-4">
-        <button className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-lg py-2 px-4 flex items-center justify-center gap-2">
+        <button
+          className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-lg py-2 px-4 flex items-center justify-center gap-2"
+          onClick={() => createChat('default')} // 这里可以传入当前选中的模型ID
+        >
           <MessageSquare className="w-5 h-5" />
           <span>New chat</span>
         </button>
@@ -34,6 +41,5 @@ export function SecondarySidebar({ isCollapsed }: SecondarySidebarProps) {
         <ChatList />
       </div>
     </div>
-  )
+  );
 }
-
