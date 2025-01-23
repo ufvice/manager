@@ -2,18 +2,20 @@ import { useState } from "react"
 import { MainSidebar } from "./main-sidebar"
 import { SecondarySidebar } from "./secondary-sidebar"
 import { MainContent } from "./main-content"
-import { Routes, Route, Navigate } from "react-router-dom"
+import { Routes, Route, Navigate, useLocation } from "react-router-dom"
 import { ExamplesView } from "@/views/ExampleView"
 import { ModelsView } from "@/views/ModelsView"
 import { NovelView } from "@/views/NovelView.tsx"
 
 export function AppShell() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
+  const location = useLocation()
+  const showSecondarySidebar = location.pathname === "/"
 
   return (
     <div className="flex h-screen bg-light-bg dark:bg-dark-bg text-light-text dark:text-dark-text">
       <MainSidebar isCollapsed={isSidebarCollapsed} />
-      <SecondarySidebar isCollapsed={isSidebarCollapsed} />
+      {showSecondarySidebar && <SecondarySidebar isCollapsed={isSidebarCollapsed} />}
       <Routes>
         <Route
           path="/"
