@@ -1,4 +1,4 @@
-import { MessageSquare, Bot, FileText, Puzzle, Box, Settings, Beaker, Database } from 'lucide-react'
+import { MessageSquare, Box, Settings, Beaker, Book } from 'lucide-react'
 import { NavigationItem } from "../navigation/navigation-item"
 import { useLocation, useNavigate } from 'react-router-dom'
 
@@ -8,13 +8,10 @@ interface MainSidebarProps {
 
 const navigationItems = [
   { icon: MessageSquare, label: "Chat", path: "/" },
-  { icon: Bot, label: "Agents", path: "/agents" },
-  { icon: FileText, label: "Prompts", path: "/prompts" },
-  { icon: Puzzle, label: "Plugins", path: "/plugins" },
+  { icon: Book, label: "Novel", path: "/novel" },
   { icon: Box, label: "Models", path: "/models" },
   { icon: Beaker, label: "Examples", path: "/examples" },
   { icon: Settings, label: "Settings", path: "/settings" },
-  { icon: Database, label: "Storage Demo", path: "/storage-demo" }
 ]
 
 export function MainSidebar({ isCollapsed }: MainSidebarProps) {

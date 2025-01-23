@@ -3,8 +3,9 @@ import { MainSidebar } from "./main-sidebar"
 import { SecondarySidebar } from "./secondary-sidebar"
 import { MainContent } from "./main-content"
 import { Routes, Route, Navigate } from "react-router-dom"
-import { ExamplesView } from "../../views/ExampleView"
-import { ModelsView } from "../../views/ModelsView"
+import { ExamplesView } from "@/views/ExampleView"
+import { ModelsView } from "@/views/ModelsView"
+import { NovelView } from "@/views/NovelView.tsx"
 
 export function AppShell() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
@@ -40,6 +41,7 @@ export function AppShell() {
           }
         />
         <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="/novel" element={<NovelView />} />
       </Routes>
     </div>
   )
