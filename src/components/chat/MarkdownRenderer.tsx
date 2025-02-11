@@ -1,5 +1,6 @@
 import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';
+import remarkGfm from 'remark-gfm';
 import rehypeKatex from 'rehype-katex';
 import 'katex/dist/katex.min.css';
 
@@ -7,23 +8,38 @@ interface MarkdownRendererProps {
   content: string;
 }
 
-// Convert modern math notation to LaTeX style
-function convertMathDelimiters(content: string): string {
-  return content
-    // Convert inline math \(...\) to $...$
-    .replace(/\\\((.*?)\\\)/g, (_, match) => `$${match}$`)
-    // Convert display math \[...\] to $$...$$
-    .replace(/\\\[(.*?)\\\]/g, (_, match) => `$$${match}$$`);
+// 将现代LaTeX符号转换为传统符号
+function convertLatexDelimiters(text: string): string {
+  const pattern = /(```[\s\S]*?```|`.*?`)|\\\[([\s\S]*?[^\\])\\\]|\\\((.*?)\\\)/g;
+  return text.replace(pattern, (match, codeBlock, displayMath, inlineMath) => {
+    if (codeBlock) {
+      // 保持代码块不变
+      return codeBlock;
+    } else if (displayMath) {
+      // 将 \[...\] 转换为 $$...$$
+      return `
+$$
+${displayMath}
+$$
+`;
+    } else if (inlineMath) {
+      // 将 \(...\) 转换为 $...$
+      return `$${inlineMath}$`;
+    }
+    return match;
+  });
 }
 
 export function MarkdownRenderer({ content }: MarkdownRendererProps) {
+  // 先转换LaTeX分隔符，再传给Markdown渲染器
+  const processedContent = convertLatexDelimiters(content);
+
   return (
     <ReactMarkdown
-      remarkPlugins={[remarkMath]}
+      remarkPlugins={[remarkMath, remarkGfm]}
       rehypePlugins={[rehypeKatex]}
       className="prose dark:prose-invert max-w-none"
       components={{
-        // 自定义渲染组件
         code({ node, inline, className, children, ...props }: any) {
           const match = /language-(\w+)/.exec(className || '');
           return !inline ? (
@@ -38,13 +54,12 @@ export function MarkdownRenderer({ content }: MarkdownRendererProps) {
             </code>
           );
         },
-        // 自定义链接在新窗口打开
         a: ({ node, ...props }) => (
           <a target="_blank" rel="noopener noreferrer" {...props} />
         ),
       }}
     >
-      {convertMathDelimiters(content)}
+      {processedContent}
     </ReactMarkdown>
   );
 }
