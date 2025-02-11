@@ -4,8 +4,10 @@ import remarkGfm from 'remark-gfm';
 import rehypeKatex from 'rehype-katex';
 import 'katex/dist/katex.min.css';
 import CodeBlock from '../code-blocks/CodeBlock';
-import { MermaidDiagram } from '../code-blocks/MermaidDiagram';
 import { SvgPreview } from '../code-blocks/SvgPreview';
+import { useEffect } from 'react';
+import mermaid from 'mermaid';
+
 
 interface MarkdownRendererProps {
   content: string;
@@ -19,32 +21,37 @@ type MarkdownCodeProps = {
   [key: string]: any;
 };
 
-// 将现代LaTeX符号转换为传统符号
-function convertLatexDelimiters(text: string): string {
-  const pattern = /(```[\s\S]*?```|`.*?`)|\\\[([\s\S]*?[^\\])\\\]|\\\((.*?)\\\)/g;
-  return text.replace(pattern, (match, codeBlock, displayMath, inlineMath) => {
-    if (codeBlock) {
-      // 保持代码块不变
-      return codeBlock;
-    } else if (displayMath) {
-      // 将 \[...\] 转换为 $$...$$
-      return `
-$$
-${displayMath}
-$$
-`;
-    } else if (inlineMath) {
-      // 将 \(...\) 转换为 $...$
-      return `$${inlineMath}$`;
-    }
-    return match;
-  });
+function MermaidDiagram({ children }: { children: React.ReactNode }) {
+  const diagramId = `mermaid-${Math.random().toString(36).substring(7)}`;
+
+  useEffect(() => {
+    const renderDiagram = async () => {
+      try {
+        // 清除之前的内容
+        const element = document.getElementById(diagramId);
+        if (element) {
+          await mermaid.run({
+            nodes: [element]
+          });
+        }
+      } catch (error) {
+        console.error('Failed to render mermaid diagram:', error);
+      }
+    };
+
+    renderDiagram();
+  }, [children, diagramId]);
+
+  return (
+    <div className="flex justify-center my-4">
+      <div id={diagramId} className="mermaid">
+        {children}
+      </div>
+    </div>
+  );
 }
 
 export function MarkdownRenderer({ content }: MarkdownRendererProps) {
-  // 先转换LaTeX分隔符，再传给Markdown渲染器
-  const processedContent = convertLatexDelimiters(content);
-
   return (
     <ReactMarkdown
       remarkPlugins={[remarkMath, remarkGfm]}
@@ -56,7 +63,7 @@ export function MarkdownRenderer({ content }: MarkdownRendererProps) {
           if (!inline && match) {
             const language = match[1];
             if (language === 'mermaid') {
-              return <MermaidDiagram chart={String(children)} />;
+              return <MermaidDiagram>{children}</MermaidDiagram>;
             }
             if (language === 'svg') {
               return <SvgPreview content={String(children)} />;
@@ -72,13 +79,10 @@ export function MarkdownRenderer({ content }: MarkdownRendererProps) {
               {children}
             </code>
           );
-        },
-        a: ({ node, ...props }) => (
-          <a target="_blank" rel="noopener noreferrer" {...props} />
-        ),
+        }
       }}
     >
-      {processedContent}
+      {content}
     </ReactMarkdown>
   );
 }
