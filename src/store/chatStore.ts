@@ -90,7 +90,7 @@ export const useChatStore = create<ChatStore>()(
           if (!chat) throw new Error('Chat not found');
 
           // Send message to AI service
-          const aiResponse = await sendChatMessage(model, [...chat.messages, userMessage]);
+          const aiResponse = await sendChatMessage(model, chat.messages);
 
           // Add AI response to chat
           const aiMessage: Message = {

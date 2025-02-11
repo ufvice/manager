@@ -10,11 +10,17 @@ interface ChatCompletionResponse {
   }>;
 }
 
+interface ChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
 export async function sendChatMessage(model: Model, messages: Message[]): Promise<string> {
-  const formattedMessages = messages.map(msg => ({
+  const apiMessages: ChatMessage[] = messages.map(msg => ({
     role: msg.sender === 'user' ? 'user' : 'assistant',
     content: msg.content
   }));
+  console.log('Sending messages to API:', JSON.stringify(apiMessages, null, 2));
 
   try {
     const response = await fetch(model.apiEndpoint, {
@@ -25,7 +31,7 @@ export async function sendChatMessage(model: Model, messages: Message[]): Promis
       },
       body: JSON.stringify({
         model: model.modelId,
-        messages: formattedMessages
+        messages: apiMessages
       })
     });
 
@@ -35,7 +41,6 @@ export async function sendChatMessage(model: Model, messages: Message[]): Promis
 
     const data: ChatCompletionResponse = await response.json();
     if (!data.choices?.[0]) {
-      console.error('Can\'t extract response from `data.choices[0].message.content`:', data);
       throw new Error('No response from chat service');
     }
     return data.choices[0].message.content;
