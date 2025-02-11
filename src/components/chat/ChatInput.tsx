@@ -3,6 +3,8 @@ import { useState } from 'react';
 import { useChatStore } from '../../store/chatStore';
 import { Search, Plus, Paperclip, Link2, Mic } from 'lucide-react';
 import { LucideIcon } from 'lucide-react';
+import { useLocalForage } from '@/common/utils';
+import { Model } from '@/components/models/types';
 
 interface ActionButtonProps {
   icon: LucideIcon;
@@ -23,10 +25,11 @@ function ActionButton({ icon: Icon, onClick }: ActionButtonProps) {
 export function ChatInput() {
   const [message, setMessage] = useState('');
   const { activeChatId, sendMessage } = useChatStore();
+  const [selectedModel] = useLocalForage<Model | undefined>('selected-model', undefined);
 
-  const handleSend = () => {
-    if (!activeChatId || !message.trim()) return;
-    sendMessage(activeChatId, message);
+  const handleSend = async () => {
+    if (!activeChatId || !message.trim() || !selectedModel) return;
+    await sendMessage(activeChatId, message, selectedModel);
     setMessage('');
   };
 

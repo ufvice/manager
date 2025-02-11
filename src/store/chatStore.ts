@@ -1,17 +1,15 @@
-// src/store/chatStore.ts
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import { Chat, ChatState, Message } from '../types/chat';
+import { sendChatMessage } from '../services/chat';
+import { Model } from '../components/models/types';
 
 interface ChatStore extends ChatState {
-  // Chat Actions
   createChat: (modelId: string) => Promise<string>;
   deleteChat: (chatId: string) => Promise<void>;
   setActiveChat: (chatId: string) => void;
   updateChatTitle: (chatId: string, title: string) => Promise<void>;
-
-  // Message Actions
-  sendMessage: (chatId: string, content: string) => Promise<void>;
+  sendMessage: (chatId: string, content: string, model: Model) => Promise<void>;
   deleteMessage: (chatId: string, messageId: string) => Promise<void>;
   updateMessage: (chatId: string, messageId: string, content: string) => Promise<void>;
 }
@@ -44,7 +42,7 @@ export const useChatStore = create<ChatStore>()(
 
       deleteChat: async (chatId: string) => {
         set(state => ({
-          chats: state.chats.filter(chat => chat.id !== chatId),
+          chats: state.chats.filter((chat: Chat) => chat.id !== chatId),
           activeChatId: state.activeChatId === chatId ? null : state.activeChatId
         }));
       },
@@ -55,7 +53,7 @@ export const useChatStore = create<ChatStore>()(
 
       updateChatTitle: async (chatId: string, title: string) => {
         set(state => ({
-          chats: state.chats.map(chat =>
+          chats: state.chats.map((chat: Chat) =>
             chat.id === chatId
               ? { ...chat, title, updatedAt: Date.now() }
               : chat
@@ -63,8 +61,8 @@ export const useChatStore = create<ChatStore>()(
         }));
       },
 
-      sendMessage: async (chatId: string, content: string) => {
-        const newMessage: Message = {
+      sendMessage: async (chatId: string, content: string, model: Model) => {
+        const userMessage: Message = {
           id: `msg-${Date.now()}`,
           content,
           timestamp: Date.now(),
@@ -72,30 +70,38 @@ export const useChatStore = create<ChatStore>()(
           status: 'sending'
         };
 
+        // Add user message to chat
         set(state => ({
-          chats: state.chats.map(chat =>
+          chats: state.chats.map((chat: Chat) =>
             chat.id === chatId
               ? {
                 ...chat,
-                messages: [...chat.messages, newMessage],
+                messages: [...chat.messages, userMessage],
                 updatedAt: Date.now()
               }
               : chat
           )
         }));
 
-        // Simulate AI response
-        setTimeout(() => {
+        try {
+          // Get current chat messages
+          const chat = get().chats.find((c: Chat) => c.id === chatId);
+          if (!chat) throw new Error('Chat not found');
+
+          // Send message to AI service
+          const aiResponse = await sendChatMessage(model, [...chat.messages, userMessage]);
+
+          // Add AI response to chat
           const aiMessage: Message = {
             id: `msg-${Date.now()}`,
-            content: 'This is a simulated AI response.',
+            content: aiResponse,
             timestamp: Date.now(),
             sender: 'ai',
             status: 'sent'
           };
 
           set(state => ({
-            chats: state.chats.map(chat =>
+            chats: state.chats.map((chat: Chat) =>
               chat.id === chatId
                 ? {
                   ...chat,
@@ -105,16 +111,33 @@ export const useChatStore = create<ChatStore>()(
                 : chat
             )
           }));
-        }, 1000);
+        } catch (error) {
+          console.error('Error sending message:', error);
+          // Update user message status to error
+          set(state => ({
+            chats: state.chats.map((chat: Chat) =>
+              chat.id === chatId
+                ? {
+                  ...chat,
+                  messages: chat.messages.map((msg: Message) =>
+                    msg.id === userMessage.id
+                      ? { ...msg, status: 'error' }
+                      : msg
+                  )
+                }
+                : chat
+            )
+          }));
+        }
       },
 
       deleteMessage: async (chatId: string, messageId: string) => {
         set(state => ({
-          chats: state.chats.map(chat =>
+          chats: state.chats.map((chat: Chat) =>
             chat.id === chatId
               ? {
                 ...chat,
-                messages: chat.messages.filter(msg => msg.id !== messageId),
+                messages: chat.messages.filter((msg: Message) => msg.id !== messageId),
                 updatedAt: Date.now()
               }
               : chat
@@ -124,11 +147,11 @@ export const useChatStore = create<ChatStore>()(
 
       updateMessage: async (chatId: string, messageId: string, content: string) => {
         set(state => ({
-          chats: state.chats.map(chat =>
+          chats: state.chats.map((chat: Chat) =>
             chat.id === chatId
               ? {
                 ...chat,
-                messages: chat.messages.map(msg =>
+                messages: chat.messages.map((msg: Message) =>
                   msg.id === messageId
                     ? { ...msg, content, timestamp: Date.now() }
                     : msg

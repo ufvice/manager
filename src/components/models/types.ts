@@ -16,6 +16,7 @@ export interface Model {
   provider: string;
   contextLength: number;
   apiType: string;
+  apiKey: string;
   pluginsSupported: boolean;
   visionSupported: boolean;
   streamingSupported: boolean;

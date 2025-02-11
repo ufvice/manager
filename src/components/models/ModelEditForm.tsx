@@ -87,6 +87,16 @@ export function ModelEditForm({ model, onSave, onCancel }: ModelEditFormProps) {
         </div>
 
         <div>
+          <label className="block text-sm font-medium mb-1">API Key</label>
+          <input
+            type="password"
+            value={formData.apiKey}
+            onChange={e => setFormData(prev => ({ ...prev, apiKey: e.target.value }))}
+            className="w-full p-2 rounded-lg border"
+          />
+        </div>
+
+        <div>
           <label className="block text-sm font-medium mb-1">Context Length</label>
           <input
             type="number"
@@ -114,7 +124,7 @@ export function ModelEditForm({ model, onSave, onCancel }: ModelEditFormProps) {
               value={formData.pricing?.input}
               onChange={e => setFormData(prev => ({
                 ...prev,
-                pricing: { ...prev.pricing, input: parseFloat(e.target.value) }
+                pricing: { input: parseFloat(e.target.value), output: prev.pricing?.output ?? 0 }
               }))}
               step="0.01"
               className="w-full p-2 rounded-lg border"
@@ -127,7 +137,7 @@ export function ModelEditForm({ model, onSave, onCancel }: ModelEditFormProps) {
               value={formData.pricing?.output}
               onChange={e => setFormData(prev => ({
                 ...prev,
-                pricing: { ...prev.pricing, output: parseFloat(e.target.value) }
+                pricing: { input: prev.pricing?.input ?? 0, output: parseFloat(e.target.value) }
               }))}
               step="0.01"
               className="w-full p-2 rounded-lg border"
