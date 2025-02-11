@@ -7,6 +7,24 @@ export default {
   darkMode: 'class',
   theme: {
     extend: {
+      typography: {
+        DEFAULT: {
+          css: {
+            maxWidth: 'none',
+            code: {
+              color: 'inherit',
+              backgroundColor: 'transparent',
+              padding: '0',
+            },
+            'code::before': {
+              content: '""',
+            },
+            'code::after': {
+              content: '""',
+            },
+          }
+        }
+      },
       colors: {
         // Light mode colors
         'light-bg': '#FFFFFF',
@@ -24,5 +42,7 @@ export default {
       },
     },
   },
-  plugins: [],
+  plugins: [
+    require('@tailwindcss/typography'),
+  ],
 }

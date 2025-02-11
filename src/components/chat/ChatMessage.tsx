@@ -1,6 +1,7 @@
 // src/components/chat/ChatMessage.tsx
 import { Message } from '../../types/chat';
 import { cn } from '@/lib/utils';
+import { MarkdownRenderer } from './MarkdownRenderer';
 
 interface ChatMessageProps {
   message: Message;
@@ -23,8 +24,8 @@ export function ChatMessage({ message, onDelete, onEdit }: ChatMessageProps) {
         {message.sender === 'ai' ? '🤖' : '👤'}
       </div>
       <div className="ml-4 flex-1">
-        <div className="text-sm text-light-text dark:text-dark-text">
-          {message.content}
+        <div className="text-sm text-light-text dark:text-dark-text prose-sm">
+          <MarkdownRenderer content={message.content} />
         </div>
         <div className="mt-1 text-xs text-light-text/50 dark:text-dark-text/50">
           {new Date(message.timestamp).toLocaleTimeString()}
