@@ -10,18 +10,20 @@ export default {
       typography: {
         DEFAULT: {
           css: {
-            maxWidth: 'none',
-            code: {
-              color: 'inherit',
-              backgroundColor: 'transparent',
-              padding: '0',
+            'pre': {
+              'background-color': 'transparent',
+              'padding': '0',
             },
-            'code::before': {
-              content: '""',
-            },
-            'code::after': {
-              content: '""',
-            },
+            'code': {
+              'background-color': 'transparent',
+              'padding': '0',
+              '&::before': {
+                content: '""',
+              },
+              '&::after': {
+                content: '""',
+              },
+            }
           }
         }
       },
