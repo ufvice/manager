@@ -1,10 +1,18 @@
 // src/components/chat/ChatMessages.tsx
 import { useChatStore } from '../../store/chatStore';
 import { ChatMessage } from './ChatMessage';
+import { useLocalForage } from '@/common/utils';
+import { Model } from '@/components/models/types';
 
 export function ChatMessages() {
-  const { chats, activeChatId, deleteMessage, updateMessage } = useChatStore();
+  const { chats, activeChatId, deleteMessage, updateMessage, retryMessage } = useChatStore();
+  const [selectedModel] = useLocalForage<Model | undefined>('selected-model', undefined);
   const activeChat = chats.find(chat => chat.id === activeChatId);
+
+  const handleRetry = (messageId: string) => {
+    if (!selectedModel || !activeChatId) return;
+    retryMessage(activeChatId, messageId, selectedModel);
+  };
 
   if (!activeChat) {
     return (
@@ -24,6 +32,7 @@ export function ChatMessages() {
           message={message}
           onDelete={(messageId) => deleteMessage(activeChat.id, messageId)}
           onEdit={(messageId, content) => updateMessage(activeChat.id, messageId, content)}
+          onRetry={message.sender === 'ai' ? handleRetry : undefined}
         />
       ))}
     </div>

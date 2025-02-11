@@ -13,6 +13,7 @@ interface ChatStore extends ChatState {
   deleteMessage: (chatId: string, messageId: string) => Promise<void>;
   updateMessage: (chatId: string, messageId: string, content: string) => Promise<void>;
   starChat: (chatId: string) => void;
+  retryMessage: (chatId: string, messageId: string, model: Model) => Promise<void>;
 }
 
 export const useChatStore = create<ChatStore>()(
@@ -177,6 +178,57 @@ export const useChatStore = create<ChatStore>()(
             return a.isStarred ? -1 : 1;
           })
         }));
+      },
+
+      retryMessage: async (chatId: string, messageId: string, model: Model) => {
+        const chat = get().chats.find((c: Chat) => c.id === chatId);
+        if (!chat) return;
+
+        const msgIndex = chat.messages.findIndex((m: Message) => m.id === messageId);
+        if (msgIndex === -1) return;
+
+        const contextMessages = chat.messages.slice(0, msgIndex);
+
+        try {
+          const aiResponse = await sendChatMessage(model, contextMessages);
+
+          set(state => ({
+            chats: state.chats.map((chat: Chat) =>
+              chat.id === chatId
+                ? {
+                  ...chat,
+                  messages: chat.messages.map((msg: Message, index: number) =>
+                    index === msgIndex
+                      ? {
+                        ...msg,
+                        content: aiResponse,
+                        timestamp: Date.now(),
+                        status: 'sent'
+                      }
+                      : msg
+                  ),
+                  updatedAt: Date.now()
+                }
+                : chat
+            )
+          }));
+        } catch (error) {
+          console.error('Error retrying message:', error);
+          set(state => ({
+            chats: state.chats.map((chat: Chat) =>
+              chat.id === chatId
+                ? {
+                  ...chat,
+                  messages: chat.messages.map((msg: Message, index: number) =>
+                    index === msgIndex
+                      ? { ...msg, status: 'error' }
+                      : msg
+                  )
+                }
+                : chat
+            )
+          }));
+        }
       },
     }),
     {
