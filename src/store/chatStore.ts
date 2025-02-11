@@ -12,6 +12,7 @@ interface ChatStore extends ChatState {
   sendMessage: (chatId: string, content: string, model: Model) => Promise<void>;
   deleteMessage: (chatId: string, messageId: string) => Promise<void>;
   updateMessage: (chatId: string, messageId: string, content: string) => Promise<void>;
+  starChat: (chatId: string) => void;
 }
 
 export const useChatStore = create<ChatStore>()(
@@ -160,6 +161,21 @@ export const useChatStore = create<ChatStore>()(
               }
               : chat
           )
+        }));
+      },
+
+      starChat: (chatId: string) => {
+        set(state => ({
+          chats: state.chats.map((chat: Chat) =>
+            chat.id === chatId
+              ? { ...chat, isStarred: !chat.isStarred }
+              : chat
+          ).sort((a: Chat, b: Chat) => {
+            if (a.isStarred === b.isStarred) {
+              return b.updatedAt - a.updatedAt;
+            }
+            return a.isStarred ? -1 : 1;
+          })
         }));
       },
     }),

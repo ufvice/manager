@@ -15,6 +15,7 @@ export interface Chat {
   createdAt: number;
   updatedAt: number;
   modelId: string;
+  isStarred?: boolean;
 }
 
 export interface ChatState {
