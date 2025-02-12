@@ -1,16 +1,16 @@
 import { useState } from 'react';
-import { Button, Select, Switch } from '@mantine/core';
-import { Model } from '../types';
+import { Button, Select, Switch, Text } from '@mantine/core';
+import { Model, ModelParameter } from '../types';
 
 interface ModelParametersProps {
   model: Model;
-  onUpdate: (params: any) => void;
+  onUpdate: (params: ModelParameter) => void;
 }
 
 export function ModelParameters({ model, onUpdate }: ModelParametersProps) {
-  const [parameters, setParameters] = useState(model.parameters);
+  const [parameters, setParameters] = useState<ModelParameter>(model.parameters);
 
-  const updateParameters = (updates: Partial<typeof parameters>) => {
+  const updateParameters = (updates: Partial<ModelParameter>) => {
     const newParameters = { ...parameters, ...updates };
     setParameters(newParameters);
     onUpdate(newParameters);
@@ -58,6 +58,24 @@ export function ModelParameters({ model, onUpdate }: ModelParametersProps) {
               className="w-full mt-2"
             />
           </ParameterField>
+
+          <div className="space-y-2">
+            <Switch
+              label="Enable Streaming Response"
+              description="Show AI responses word by word as they are generated"
+              checked={parameters.streamingEnabled && model.streamingSupported}
+              disabled={!model.streamingSupported}
+              onChange={(e) => {
+                console.log("Streaming enabled:", e.currentTarget.checked);
+                updateParameters({ streamingEnabled: e.currentTarget.checked });
+              }}
+            />
+            {!model.streamingSupported && (
+              <Text size="xs" c="dimmed">
+                This model does not support streaming responses
+              </Text>
+            )}
+          </div>
 
           {/* Add other parameters similarly */}
         </div>

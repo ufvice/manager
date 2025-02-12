@@ -64,6 +64,9 @@ export const useChatStore = create<ChatStore>()(
       },
 
       sendMessage: async (chatId: string, content: string, model: Model) => {
+        console.log('Sending with model:', model);
+        console.log('Model parameters:', model.parameters);
+
         const userMessage: Message = {
           id: `msg-${Date.now()}`,
           content,
@@ -72,13 +75,20 @@ export const useChatStore = create<ChatStore>()(
           status: 'sending'
         };
 
-        // Add user message to chat
+        const aiMessage: Message = {
+          id: `msg-${Date.now() + 1}`,
+          content: '',
+          timestamp: Date.now(),
+          sender: 'ai',
+          status: 'sending'
+        };
+
         set(state => ({
           chats: state.chats.map((chat: Chat) =>
             chat.id === chatId
               ? {
                 ...chat,
-                messages: [...chat.messages, userMessage],
+                messages: [...chat.messages, userMessage, aiMessage],
                 updatedAt: Date.now()
               }
               : chat
@@ -86,28 +96,41 @@ export const useChatStore = create<ChatStore>()(
         }));
 
         try {
-          // Get current chat messages
           const chat = get().chats.find((c: Chat) => c.id === chatId);
           if (!chat) throw new Error('Chat not found');
 
-          // Send message to AI service
-          const aiResponse = await sendChatMessage(model, chat.messages);
-
-          // Add AI response to chat
-          const aiMessage: Message = {
-            id: `msg-${Date.now()}`,
-            content: aiResponse,
-            timestamp: Date.now(),
-            sender: 'ai',
-            status: 'sent'
+          const onProgress = (content: string) => {
+            set(state => ({
+              chats: state.chats.map((chat: Chat) =>
+                chat.id === chatId
+                  ? {
+                    ...chat,
+                    messages: chat.messages.map((msg: Message) =>
+                      msg.id === aiMessage.id
+                        ? { ...msg, content, status: 'sending' }
+                        : msg
+                    )
+                  }
+                  : chat
+              )
+            }));
           };
+
+          const aiResponse = await sendChatMessage(model,
+            chat.messages.slice(0, -1),
+            model.parameters.streamingEnabled ? onProgress : undefined
+          );
 
           set(state => ({
             chats: state.chats.map((chat: Chat) =>
               chat.id === chatId
                 ? {
                   ...chat,
-                  messages: [...chat.messages, aiMessage],
+                  messages: chat.messages.map((msg: Message) =>
+                    msg.id === aiMessage.id
+                      ? { ...msg, content: aiResponse, status: 'sent' }
+                      : msg
+                  ),
                   updatedAt: Date.now()
                 }
                 : chat
@@ -115,14 +138,13 @@ export const useChatStore = create<ChatStore>()(
           }));
         } catch (error) {
           console.error('Error sending message:', error);
-          // Update user message status to error
           set(state => ({
             chats: state.chats.map((chat: Chat) =>
               chat.id === chatId
                 ? {
                   ...chat,
                   messages: chat.messages.map((msg: Message) =>
-                    msg.id === userMessage.id
+                    msg.id === aiMessage.id
                       ? { ...msg, status: 'error' }
                       : msg
                   )

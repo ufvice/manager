@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Button, Group, Title, Text, TextInput, SegmentedControl, Tabs } from '@mantine/core';
 import { Plus, Settings, Search, Check, Trash2, Copy, Edit } from 'lucide-react';
 import { notifications } from '@mantine/notifications';
-import { Model } from '@/components/models/types';
+import { Model, ModelParameter } from '@/components/models/types';
 import { useLocalForage } from '@/common/utils';
 import { ProviderIcon } from '@/components/models/model-list/ProviderIcon';
 import { ModelListItem } from '@/components/models/model-list/ModelListItem';
@@ -18,6 +18,7 @@ export function ModelsView() {
   const [showGlobalSettings, setShowGlobalSettings] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedLocalModel, setSelectedLocalModel] = useLocalForage<Model | undefined>('selected-model', undefined);
 
   const [modelsData, setModelsData] = useLocalForage<{ data: { models: Model[] } }>('models-data', {
     data: { models: [] }
@@ -83,6 +84,37 @@ export function ModelsView() {
     notifications.show({
       title: 'Default Model Set',
       message: `${model.name} is now the default model`,
+      color: 'green',
+    });
+  };
+
+  const handleParameterUpdate = (model: Model, params: ModelParameter) => {
+    console.log('Before update - models:', modelsData.data.models);
+
+    const updatedModel = {
+      ...model,
+      parameters: { ...params }
+    };
+
+    const updatedModels = modelsData.data.models.map(m =>
+      m.id === model.id ? updatedModel : m
+    );
+
+    console.log('After update - updated model:', updatedModel);
+
+    setModelsData({
+      data: {
+        models: updatedModels
+      }
+    });
+
+    if (selectedLocalModel?.id === model.id) {
+      setSelectedLocalModel(updatedModel);
+    }
+
+    notifications.show({
+      title: 'Parameters Updated',
+      message: `Successfully updated parameters for ${model.name}`,
       color: 'green',
     });
   };
@@ -241,18 +273,7 @@ export function ModelsView() {
               <Tabs.Panel value="parameters" pt="md">
                 <ModelParameters
                   model={selectedModel}
-                  onUpdate={(params) => {
-                    const updatedModels = modelsData.data.models.map(m =>
-                      m.id === selectedModel.id ? { ...m, parameters: params } : m
-                    );
-                    setModelsData({ data: { models: updatedModels } });
-
-                    notifications.show({
-                      title: 'Parameters Updated',
-                      message: `Successfully updated parameters for ${selectedModel.name}`,
-                      color: 'green',
-                    });
-                  }}
+                  onUpdate={(params) => handleParameterUpdate(selectedModel, params)}
                 />
               </Tabs.Panel>
             </Tabs>

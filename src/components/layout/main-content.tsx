@@ -9,6 +9,7 @@ import { useLocalForage } from '@/common/utils';
 import { ChatMessages } from '../chat/ChatMessages';
 import { ChatInput } from '../chat/ChatInput';
 import { useChatStore } from '../../store/chatStore';
+import { useCallback } from 'react';
 
 interface MainContentProps {
   isSidebarCollapsed: boolean;
@@ -17,9 +18,22 @@ interface MainContentProps {
 
 export function MainContent({ isSidebarCollapsed, onToggleSidebar }: MainContentProps) {
   const [selectedModel, setSelectedModel] = useLocalForage<Model | undefined>('selected-model', undefined);
+  const [modelsData] = useLocalForage<{ data: { models: Model[] } }>('models-data', { data: { models: [] } });
   const { activeChatId } = useChatStore();
   const location = useLocation();
   const isChat = location.pathname === "/";
+
+  const getLatestModel = useCallback(() => {
+    if (!selectedModel) return undefined;
+    const latest = modelsData.data.models.find(m => m.id === selectedModel.id);
+    console.log('Latest model data:', latest);
+    return latest;
+  }, [selectedModel, modelsData]);
+
+  const handleModelSelect = (model: Model) => {
+    console.log('Setting selected model:', model);
+    setSelectedModel(model);
+  };
 
   return (
     <div className="flex-1 flex flex-col">
@@ -37,7 +51,7 @@ export function MainContent({ isSidebarCollapsed, onToggleSidebar }: MainContent
         {isChat && <div className="ml-4 flex items-center gap-2">
           <ModelSelector
             selectedModel={selectedModel}
-            onModelSelect={setSelectedModel}
+            onModelSelect={handleModelSelect}
           />
         </div>}
       </Header>

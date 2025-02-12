@@ -7,6 +7,7 @@ export interface ModelParameter {
   topP: number;
   maxTokens: number;
   overrideGlobal: boolean;
+  streamingEnabled: boolean;
 }
 
 export interface Model {
@@ -38,7 +39,8 @@ export const DEFAULT_PARAMETERS: ModelParameter = {
   frequencyPenalty: 0,
   topP: 1,
   maxTokens: 2048,
-  overrideGlobal: false
+  overrideGlobal: false,
+  streamingEnabled: false  // Default value
 };
 
 export const API_TYPES = ["openai", "anthropic", "google", "custom"] as const;

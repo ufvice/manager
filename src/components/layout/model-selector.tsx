@@ -13,6 +13,15 @@ export default function ModelSelector({ selectedModel, onModelSelect }: ModelSel
   const [modelsData] = useLocalForage<{ data: { models: Model[] } }>('models-data', { data: { models: [] } });
   const models = modelsData?.data?.models || [];
 
+  const handleModelSelect = (model: Model) => {
+    const fullModel = modelsData.data.models.find(m => m.id === model.id);
+    if (fullModel) {
+      console.log('Selected full model:', fullModel);
+      onModelSelect(fullModel);
+    }
+    setIsOpen(false);
+  };
+
   return (
     <div className="relative">
       <button
@@ -41,8 +50,7 @@ export default function ModelSelector({ selectedModel, onModelSelect }: ModelSel
                 className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-light-accent dark:hover:bg-dark-accent ${selectedModel?.id === model.id ? 'bg-light-accent dark:bg-dark-accent' : ''
                   }`}
                 onClick={() => {
-                  onModelSelect(model);
-                  setIsOpen(false);
+                  handleModelSelect(model);
                 }}
               >
                 {model.provider === 'Anthropic' && (
