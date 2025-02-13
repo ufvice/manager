@@ -1,5 +1,6 @@
 import { ApiConfig, ApiEndpoint, Model } from '@/types/model';
 import { Message } from '@/types/chat';
+import { useConfigStore } from '@/store/configStore';
 
 export class ApiService {
   private getEndpointUrl(baseUrl: string, endpoint: ApiEndpoint): string {
@@ -45,20 +46,24 @@ export class ApiService {
     const url = this.getEndpointUrl(model.apiConfig.baseUrl, model.endpoint);
     const headers = this.createHeaders(model.apiConfig);
 
-    // Add custom headers if any
-    if (model.parameters.headers) {
-      Object.entries(model.parameters.headers).forEach(([key, value]) => {
-        headers.set(key, value);
-      });
-    }
+    const config = useConfigStore.getState();
+    const shouldStream = model.parameters.overrideGlobal
+      ? model.parameters.streamingEnabled
+      : config.streamResponses;
 
     const baseBody = {
       model: model.modelId,
-      messages: messages.map(msg => ({
-        role: msg.sender === 'user' ? 'user' : 'assistant',
-        content: msg.content
-      })),
-      stream: model.parameters.streamingEnabled && model.streamingSupported,
+      messages: [
+        {
+          role: 'system',
+          content: config.systemInstruction
+        },
+        ...messages.map(msg => ({
+          role: msg.sender === 'user' ? 'user' : 'assistant',
+          content: msg.content
+        }))
+      ],
+      stream: shouldStream && model.streamingSupported,
       temperature: model.parameters.temperature,
       presence_penalty: model.parameters.presencePenalty,
       frequency_penalty: model.parameters.frequencyPenalty,
@@ -75,15 +80,28 @@ export class ApiService {
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorText = await response.text();
+        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
       }
 
-      if (model.parameters.streamingEnabled && model.streamingSupported) {
+      if (shouldStream && model.streamingSupported) {
         return this.handleStreamingResponse(response, onProgress);
       }
 
-      const data = await response.json();
-      return data.choices[0].message.content;
+      // 修改非流式响应处理
+      try {
+        const data = await response.json();
+        if (!data.choices?.[0]?.message?.content) {
+          throw new Error('Invalid response format');
+        }
+        const content = data.choices[0].message.content;
+        // 确保通过 onProgress 回调通知 UI 更新
+        onProgress?.(content);
+        return content;
+      } catch (parseError) {
+        console.error('Failed to parse response:', parseError);
+        throw new Error('Failed to parse API response');
+      }
     } catch (error) {
       console.error('API request failed:', error);
       throw error;

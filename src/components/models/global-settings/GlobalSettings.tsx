@@ -1,10 +1,13 @@
-import { useState } from 'react';
-import { Button, Group, Select, Switch, Textarea } from '@mantine/core';
+import { Select, Switch, Textarea } from '@mantine/core';
+import { useLocalForage } from '@/common/utils';
+import { Model } from '@/types/model';
+import { useConfigStore } from '@/store/configStore';
 
 export function GlobalSettings() {
-  const [defaultModel, setDefaultModel] = useState<string>("");
-  const [systemInstruction, setSystemInstruction] = useState<string>("You are a helpful AI assistant.");
-  const [streamResponses, setStreamResponses] = useState<boolean>(true);
+  const [modelsData] = useLocalForage<{ data: { models: Model[] } }>('models-data', {
+    data: { models: [] }
+  });
+  const { systemInstruction, streamResponses, defaultModel, updateConfig } = useConfigStore();
 
   return (
     <div className="space-y-6">
@@ -12,37 +15,30 @@ export function GlobalSettings() {
         <div className="text-sm font-medium mb-2">Default Model</div>
         <Select
           value={defaultModel}
-          onChange={(value: string | null) => setDefaultModel(value || "")}
-          data={[
-            { value: "gpt-4", label: "GPT-4" },
-            { value: "gpt-3.5-turbo", label: "GPT-3.5 Turbo" },
-          ]}
+          onChange={(value: string | null) => updateConfig({ defaultModel: value || undefined })}
+          data={modelsData.data.models
+            .filter(model => model.isEnabled)
+            .map(model => ({
+              value: model.id,
+              label: model.name
+            }))}
         />
       </div>
 
       <div>
-        <Group justify="space-between">
-          <div className="text-sm font-medium">System Instruction</div>
-          <Button
-            variant="subtle"
-            size="xs"
-            onClick={() => setSystemInstruction("You are a helpful AI assistant.")}
-          >
-            Reset to default
-          </Button>
-        </Group>
+        <div className="text-sm font-medium mb-2">System Instruction</div>
         <Textarea
           value={systemInstruction}
-          onChange={(e) => setSystemInstruction(e.currentTarget.value)}
+          onChange={(e) => updateConfig({ systemInstruction: e.currentTarget.value })}
           minRows={3}
-          className="mt-2"
+          placeholder="Enter system instruction for AI"
         />
       </div>
 
       <Switch
         label="Stream AI responses word by word"
         checked={streamResponses}
-        onChange={(e) => setStreamResponses(e.currentTarget.checked)}
+        onChange={(e) => updateConfig({ streamResponses: e.currentTarget.checked })}
       />
     </div>
   );

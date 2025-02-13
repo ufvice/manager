@@ -72,7 +72,7 @@ export const useChatStore = create<ChatStore>()(
           content,
           timestamp: Date.now(),
           sender: 'user',
-          status: 'sending'
+          status: 'sent'
         };
 
         const aiMessage: Message = {
@@ -99,7 +99,7 @@ export const useChatStore = create<ChatStore>()(
           const chat = get().chats.find((c: Chat) => c.id === chatId);
           if (!chat) throw new Error('Chat not found');
 
-          const onProgress = (content: string) => {
+          const updateMessageContent = (content: string) => {
             set(state => ({
               chats: state.chats.map((chat: Chat) =>
                 chat.id === chatId
@@ -107,7 +107,7 @@ export const useChatStore = create<ChatStore>()(
                     ...chat,
                     messages: chat.messages.map((msg: Message) =>
                       msg.id === aiMessage.id
-                        ? { ...msg, content, status: 'sending' }
+                        ? { ...msg, content, status: msg.status === 'error' ? 'error' : 'sending' }
                         : msg
                     )
                   }
@@ -116,11 +116,16 @@ export const useChatStore = create<ChatStore>()(
             }));
           };
 
-          const aiResponse = await apiService.sendChatRequest(model,
-            chat.messages.slice(0, -1),
-            model.parameters.streamingEnabled ? onProgress : undefined
+          // 确保包含了正确的上下文消息
+          const contextMessages = chat.messages.slice(0, -1);
+
+          const aiResponse = await apiService.sendChatRequest(
+            model,
+            contextMessages,
+            updateMessageContent
           );
 
+          // 确保最终状态更新
           set(state => ({
             chats: state.chats.map((chat: Chat) =>
               chat.id === chatId
