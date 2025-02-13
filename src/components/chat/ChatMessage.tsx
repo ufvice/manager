@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Message } from '../../types/chat';
 import { cn } from '@/lib/utils';
 import { MarkdownRenderer } from './MarkdownRenderer';
@@ -14,6 +14,13 @@ interface ChatMessageProps {
 export function ChatMessage({ message, onDelete, onEdit, onRetry }: ChatMessageProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(message.content);
+  const [displayContent, setDisplayContent] = useState(message.content);
+
+  useEffect(() => {
+    if (message.status === 'sending' && message.sender === 'ai') {
+      setDisplayContent(message.content);
+    }
+  }, [message.content, message.status, message.sender]);
 
   const handleCopy = async () => {
     try {
@@ -78,7 +85,7 @@ export function ChatMessage({ message, onDelete, onEdit, onRetry }: ChatMessageP
         ) : (
           <>
             <div className="text-sm text-light-text dark:text-dark-text prose-sm">
-              <MarkdownRenderer content={message.content} />
+              <MarkdownRenderer content={displayContent} />
             </div>
             <div className="mt-2 flex items-center gap-2">
               <div className="text-xs text-light-text/50 dark:text-dark-text/50">

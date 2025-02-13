@@ -18,6 +18,48 @@ interface ChatMessage {
   content: string;
 }
 
+const CHAR_DELAY = 1; // Character delay in ms
+const TOKEN_THRESHOLD = 100; // Threshold for slow token detection in ms
+
+async function* characterStreamGenerator(content: string, lastTokenTime: number) {
+  const now = Date.now();
+  const timeDiff = now - lastTokenTime;
+
+  if (timeDiff > TOKEN_THRESHOLD) {
+    // Slow mode: output character by character
+    const charInterval = Math.min(Math.max(timeDiff / content.length, CHAR_DELAY), 100);
+    for (let i = 0; i < content.length; i++) {
+      await new Promise(resolve => setTimeout(resolve, charInterval));
+      yield content[i];
+    }
+  } else {
+    // Fast mode: output entire token at once
+    yield content;
+  }
+}
+
+function parseTokens(data: string): string[] {
+  const tokens: string[] = [];
+  const lines = data.split('\n');
+
+  for (const line of lines) {
+    if (line.startsWith('data: ')) {
+      const content = line.slice(6);
+      if (content === '[DONE]') continue;
+
+      try {
+        const parsed = JSON.parse(content);
+        const token = parsed.choices[0]?.delta?.content || '';
+        if (token) tokens.push(token);
+      } catch (e) {
+        console.error('Error parsing token:', e);
+      }
+    }
+  }
+
+  return tokens;
+}
+
 export async function sendChatMessage(
   model: Model,
   messages: Message[],
@@ -55,11 +97,11 @@ export async function sendChatMessage(
 
     // Handle streaming response
     if (streamingEnabled) {
-      console.log('Starting streaming response');
+      let lastTokenTime = Date.now();
+      let fullContent = '';
+      let buffer = '';
       const reader = response.body?.getReader();
       const decoder = new TextDecoder();
-      let buffer = '';
-      let fullContent = '';
 
       if (!reader) throw new Error('No reader available');
 
@@ -73,39 +115,24 @@ export async function sendChatMessage(
         buffer = lines.pop() || '';
 
         for (const line of lines) {
-          const trimmedLine = line.trim();
-          if (!trimmedLine) continue;
-
-          if (trimmedLine.startsWith('data: ')) {
-            const data = trimmedLine.slice(6);
-
-            if (data === '[DONE]') continue;
-
-            try {
-              console.log('Parsing SSE data:', data);
-              const parsed: ChatCompletionResponse = JSON.parse(data);
-              const content = parsed.choices[0]?.delta?.content || '';
-              fullContent += content;
+          const tokens = parseTokens(line);
+          for (const token of tokens) {
+            for await (const char of characterStreamGenerator(token, lastTokenTime)) {
+              fullContent += char;
               onProgress?.(fullContent);
-            } catch (e) {
-              console.error('Error parsing SSE message:', e, 'Raw data:', data);
-              continue;
             }
+            lastTokenTime = Date.now();
           }
         }
       }
 
-      if (buffer.trim()) {
-        const trimmedBuffer = buffer.trim();
-        if (trimmedBuffer.startsWith('data: ') && trimmedBuffer !== 'data: [DONE]') {
-          try {
-            const data = trimmedBuffer.slice(6);
-            const parsed: ChatCompletionResponse = JSON.parse(data);
-            const content = parsed.choices[0]?.delta?.content || '';
-            fullContent += content;
+      // Handle remaining buffer
+      if (buffer) {
+        const tokens = parseTokens(buffer);
+        for (const token of tokens) {
+          for await (const char of characterStreamGenerator(token, lastTokenTime)) {
+            fullContent += char;
             onProgress?.(fullContent);
-          } catch (e) {
-            console.error('Error parsing final buffer:', e);
           }
         }
       }
