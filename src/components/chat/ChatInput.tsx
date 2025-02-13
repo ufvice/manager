@@ -1,10 +1,14 @@
 import { useState } from 'react';
 import { useChatStore } from '../../store/chatStore';
-import { Search, Plus, Paperclip, Link2, Mic, Send, ChevronDown } from 'lucide-react';
+import { Search, Plus, Link2, Mic, Send, ChevronDown } from 'lucide-react';
 import { LucideIcon } from 'lucide-react';
 import { useLocalForage } from '@/common/utils';
 import { Model } from '@/components/models/types';
 import { Popover } from '@mantine/core';
+import { FileUploadHandler } from './FileUploadHandler';
+import { FileAttachments } from './FileAttachments';
+import { notifications } from '@mantine/notifications';
+import { FileAttachment } from '../../types/chat';
 
 interface ActionButtonProps {
   icon: LucideIcon;
@@ -24,15 +28,25 @@ function ActionButton({ icon: Icon, onClick }: ActionButtonProps) {
 
 export function ChatInput() {
   const [message, setMessage] = useState('');
+  const [attachments, setAttachments] = useState<FileAttachment[]>([]);
   const { activeChatId, sendMessage } = useChatStore();
   const [selectedModel] = useLocalForage<Model | undefined>('selected-model', undefined);
   const [enterToSend, setEnterToSend] = useLocalForage<boolean>('enter-to-send', true);
   const [showPopover, setShowPopover] = useState(false);
 
   const handleSend = async () => {
-    if (!activeChatId || !message.trim() || !selectedModel) return;
-    await sendMessage(activeChatId, message, selectedModel);
+    if (!activeChatId || (!message.trim() && attachments.length === 0) || !selectedModel) return;
+
+    // Construct message content
+    let content = message;
+    if (attachments.length > 0) {
+      const fileList = attachments.map(file => file.content).join('\n\n');
+      content = [content, fileList].filter(Boolean).join('\n\n');
+    }
+
+    await sendMessage(activeChatId, content, selectedModel);
     setMessage('');
+    setAttachments([]);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -49,16 +63,52 @@ export function ChatInput() {
     }
   };
 
+  const handleFileAdd = (newAttachments: FileAttachment[]) => {
+    setAttachments(prev => [...prev, ...newAttachments]);
+  };
+
+  const handleReorder = (dragIndex: number, hoverIndex: number) => {
+    setAttachments(prev => {
+      const newAttachments = [...prev];
+      const [removed] = newAttachments.splice(dragIndex, 1);
+      if (!removed) {
+        console.error('Item not found in array');
+        return prev; // Return original array if item wasn't found
+      }
+      newAttachments.splice(hoverIndex, 0, removed);
+      return newAttachments;
+    });
+  };
+
+  const handleFileRemove = (id: string) => {
+    setAttachments(prev => prev.filter(file => file.id !== id));
+  };
+
+  const handleFileError = (error: string) => {
+    notifications.show({
+      title: 'File Upload Error',
+      message: error,
+      color: 'red'
+    });
+  };
+
   return (
     <div className="p-4 border-t border-light-border dark:border-dark-border">
       <div className="rounded-lg p-2" style={{ background: 'var(--color-sidebar)' }}>
+        {attachments.length > 0 && (
+          <FileAttachments
+            attachments={attachments}
+            onRemove={handleFileRemove}
+            onReorder={handleReorder}
+          />
+        )}
         <textarea
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="Type '@' to mention an AI agent"
           className="w-full text-light-text dark:text-dark-text placeholder:text-light-text/50 dark:placeholder:text-dark-text/50 mb-2 resize-none min-h-[40px] max-h-[200px] px-2 focus:outline-none focus:ring-0 selection:bg-blue-500/30 overflow-y-auto appearance-none"
-          style={{ 
+          style={{
             background: 'var(--color-sidebar)',
             WebkitAppearance: 'none'
           }}
@@ -74,12 +124,15 @@ export function ChatInput() {
           <div className="flex gap-2">
             <ActionButton icon={Search} />
             <ActionButton icon={Plus} />
-            <ActionButton icon={Paperclip} />
+            <FileUploadHandler
+              onFileAdd={handleFileAdd}
+              onError={handleFileError}
+            />
             <ActionButton icon={Link2} />
             <ActionButton icon={Mic} />
           </div>
           <div className="flex items-center">
-            <Popover 
+            <Popover
               opened={showPopover}
               onChange={setShowPopover}
               position="top"
@@ -87,7 +140,7 @@ export function ChatInput() {
               width={200}
             >
               <Popover.Target>
-                <button 
+                <button
                   className="p-1 hover:bg-light-accent/70 dark:hover:bg-dark-accent/70 rounded"
                   onClick={() => setShowPopover(!showPopover)}
                 >

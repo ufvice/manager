@@ -1,4 +1,11 @@
 // src/types/chat.ts
+export interface FileAttachment {
+  id: string;
+  name: string;
+  content: string;
+  type: string;
+}
+
 export interface Message {
   id: string;
   content: string;
@@ -6,6 +13,7 @@ export interface Message {
   sender: 'user' | 'ai';
   modelId?: string;
   status?: 'sending' | 'sent' | 'error';
+  attachments?: FileAttachment[];
 }
 
 export interface Chat {
