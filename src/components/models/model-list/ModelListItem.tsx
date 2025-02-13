@@ -1,5 +1,5 @@
 import { Switch } from '@mantine/core';
-import { Model } from '../types';
+import { Model } from '@/types/model';
 import { ProviderIcon } from './ProviderIcon';
 
 interface ModelListItemProps {
