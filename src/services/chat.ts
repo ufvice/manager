@@ -18,8 +18,8 @@ interface ChatMessage {
   content: string;
 }
 
-const CHAR_DELAY = 1; // Character delay in ms
-const TOKEN_THRESHOLD = 100; // Threshold for slow token detection in ms
+const CHAR_DELAY = 10; // Character delay in ms
+const TOKEN_THRESHOLD = 400; // Threshold for slow token detection in ms
 
 async function* characterStreamGenerator(content: string, lastTokenTime: number) {
   const now = Date.now();
