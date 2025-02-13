@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ApiConfig, Model, ModelParameter, DEFAULT_PARAMETERS } from '../../types/model';
+import { ApiConfig, Model, ModelParameter, DEFAULT_PARAMETERS } from '@/types/model';
 import { PlusCircle, MinusCircle } from 'lucide-react';
 
 interface ModelConfigFormProps {

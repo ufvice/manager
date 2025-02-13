@@ -1,7 +1,7 @@
 import { useRef } from 'react';
 import { Upload } from 'lucide-react';
 import mime from 'mime';
-import { FileAttachment } from '../../types/chat';
+import { FileAttachment } from '@/types/chat';
 
 interface FileUploadHandlerProps {
   onFileAdd: (attachments: FileAttachment[]) => void;

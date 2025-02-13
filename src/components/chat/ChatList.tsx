@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { Star, Trash2, MoreVertical } from 'lucide-react';
 import { useChatStore } from '../../store/chatStore';
-import { Chat } from '../../types/chat';
+import { Chat } from '@/types/chat';
 
 export function ChatList() {
   const { chats, activeChatId, setActiveChat, deleteChat, starChat, updateChatTitle } = useChatStore();

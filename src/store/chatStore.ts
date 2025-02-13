@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
-import { Chat, ChatState, Message } from '../types/chat';
-import { apiService } from '../services/api';
+import { Chat, ChatState, Message } from '@/types/chat';
+import { apiService } from '@/services/api';
 import { Model } from '@/types/model';
 
 interface ChatStore extends ChatState {

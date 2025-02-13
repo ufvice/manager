@@ -1,5 +1,5 @@
-import { Message } from '../types/chat';
-import { Model } from '../types/model';
+import { Message } from '@/types/chat';
+import { Model } from '@/types/model';
 import { apiService } from './api';
 
 interface ChatCompletionResponse {

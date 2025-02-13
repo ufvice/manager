@@ -1,5 +1,5 @@
 import { X, GripHorizontal } from 'lucide-react';
-import { FileAttachment } from '../../types/chat';
+import { FileAttachment } from '@/types/chat';
 import { useState, useRef } from 'react';
 
 interface FileAttachmentsProps {

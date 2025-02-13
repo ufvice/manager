@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useChatStore } from '../../store/chatStore';
+import { useChatStore } from '@/store/chatStore';
 import { Search, Plus, Link2, Mic, Send, ChevronDown } from 'lucide-react';
 import { LucideIcon } from 'lucide-react';
 import { useLocalForage } from '@/common/utils';
@@ -8,8 +8,8 @@ import { Popover } from '@mantine/core';
 import { FileUploadHandler } from './FileUploadHandler';
 import { FileAttachments } from './FileAttachments';
 import { notifications } from '@mantine/notifications';
-import { FileAttachment } from '../../types/chat';
-import { formatMessageWithFiles } from '../../utils/format';
+import { FileAttachment } from '@/types/chat';
+import { formatMessageWithFiles } from '@/utils/format';
 
 interface ActionButtonProps {
   icon: LucideIcon;

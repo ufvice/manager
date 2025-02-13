@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Message } from '../../types/chat';
+import { Message } from '@/types/chat';
 import { cn } from '@/lib/utils';
 import { MarkdownRenderer } from './MarkdownRenderer';
 import { Copy, Trash2, Edit2, Check, RefreshCw, MessageSquare } from 'lucide-react';

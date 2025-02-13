@@ -1,5 +1,5 @@
-import { ApiConfig, ApiEndpoint, Model } from '../types/model';
-import { Message } from '../types/chat';
+import { ApiConfig, ApiEndpoint, Model } from '@/types/model';
+import { Message } from '@/types/chat';
 
 export class ApiService {
   private getEndpointUrl(baseUrl: string, endpoint: ApiEndpoint): string {

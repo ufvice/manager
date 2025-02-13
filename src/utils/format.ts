@@ -1,4 +1,4 @@
-import { FileAttachment } from '../types/chat';
+import { FileAttachment } from '@/types/chat';
 
 export function formatFileContent(file: FileAttachment): string {
   return `[file name]: ${file.name}
