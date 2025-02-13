@@ -9,6 +9,7 @@ import { FileUploadHandler } from './FileUploadHandler';
 import { FileAttachments } from './FileAttachments';
 import { notifications } from '@mantine/notifications';
 import { FileAttachment } from '../../types/chat';
+import { formatMessageWithFiles } from '../../utils/format';
 
 interface ActionButtonProps {
   icon: LucideIcon;
@@ -37,14 +38,9 @@ export function ChatInput() {
   const handleSend = async () => {
     if (!activeChatId || (!message.trim() && attachments.length === 0) || !selectedModel) return;
 
-    // Construct message content
-    let content = message;
-    if (attachments.length > 0) {
-      const fileList = attachments.map(file => file.content).join('\n\n');
-      content = [content, fileList].filter(Boolean).join('\n\n');
-    }
-
+    const content = formatMessageWithFiles(message, attachments);
     await sendMessage(activeChatId, content, selectedModel);
+
     setMessage('');
     setAttachments([]);
   };
