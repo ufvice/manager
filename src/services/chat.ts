@@ -1,5 +1,6 @@
 import { Message } from '../types/chat';
-import { Model } from '../components/models/types';
+import { Model } from '../types/model';
+import { apiService } from './api';
 
 interface ChatCompletionResponse {
   choices: Array<{
@@ -65,88 +66,8 @@ export async function sendChatMessage(
   messages: Message[],
   onProgress?: (content: string) => void
 ): Promise<string> {
-  console.log('Chat service model:', model);
-  console.log('Chat service parameters:', model.parameters);
-
-  const apiMessages: ChatMessage[] = messages.map(msg => ({
-    role: msg.sender === 'user' ? 'user' : 'assistant',
-    content: msg.content
-  }));
-  console.log('Sending messages to API:', JSON.stringify(apiMessages, null, 2));
-
-  const streamingEnabled = model.parameters?.streamingEnabled && model.streamingSupported;
-  console.log('Streaming enabled:', streamingEnabled);
-
   try {
-    const response = await fetch(model.apiEndpoint, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${model.apiKey}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        model: model.modelId,
-        messages: apiMessages,
-        stream: streamingEnabled
-      })
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    // Handle streaming response
-    if (streamingEnabled) {
-      let lastTokenTime = Date.now();
-      let fullContent = '';
-      let buffer = '';
-      const reader = response.body?.getReader();
-      const decoder = new TextDecoder();
-
-      if (!reader) throw new Error('No reader available');
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-
-        const lines = buffer.split('\n');
-        buffer = lines.pop() || '';
-
-        for (const line of lines) {
-          const tokens = parseTokens(line);
-          for (const token of tokens) {
-            for await (const char of characterStreamGenerator(token, lastTokenTime)) {
-              fullContent += char;
-              onProgress?.(fullContent);
-            }
-            lastTokenTime = Date.now();
-          }
-        }
-      }
-
-      // Handle remaining buffer
-      if (buffer) {
-        const tokens = parseTokens(buffer);
-        for (const token of tokens) {
-          for await (const char of characterStreamGenerator(token, lastTokenTime)) {
-            fullContent += char;
-            onProgress?.(fullContent);
-          }
-        }
-      }
-
-      return fullContent;
-    }
-
-    console.log('Streaming response disabled, %s', model.parameters.streamingEnabled);
-    // Non-streaming response
-    const data: ChatCompletionResponse = await response.json();
-    if (!data.choices?.[0]) {
-      throw new Error('No response from chat service');
-    }
-    return data.choices[0].message.content;
+    return await apiService.sendChatRequest(model, messages, onProgress);
   } catch (error) {
     console.error('Chat service error:', error);
     throw error;

@@ -2,7 +2,7 @@
 import { useChatStore } from '../../store/chatStore';
 import { ChatMessage } from './ChatMessage';
 import { useLocalForage } from '@/common/utils';
-import { Model } from '@/components/models/types';
+import { Model } from '@/types/model';
 
 export function ChatMessages() {
   const { chats, activeChatId, deleteMessage, updateMessage, retryMessage } = useChatStore();

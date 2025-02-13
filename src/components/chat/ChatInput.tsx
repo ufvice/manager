@@ -3,7 +3,7 @@ import { useChatStore } from '../../store/chatStore';
 import { Search, Plus, Link2, Mic, Send, ChevronDown } from 'lucide-react';
 import { LucideIcon } from 'lucide-react';
 import { useLocalForage } from '@/common/utils';
-import { Model } from '@/components/models/types';
+import { Model } from '@/types/model';
 import { Popover } from '@mantine/core';
 import { FileUploadHandler } from './FileUploadHandler';
 import { FileAttachments } from './FileAttachments';

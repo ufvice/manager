@@ -4,7 +4,7 @@ import { useLocation } from 'react-router-dom';
 import { Header } from "../header";
 import { MainArea } from "./main-area";
 import ModelSelector from './model-selector';
-import { Model } from '@/components/models/types';
+import { Model } from '@/types/model';
 import { useLocalForage } from '@/common/utils';
 import { ChatMessages } from '../chat/ChatMessages';
 import { ChatInput } from '../chat/ChatInput';

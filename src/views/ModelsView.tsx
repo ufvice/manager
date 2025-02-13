@@ -2,28 +2,30 @@ import { useState } from 'react';
 import { Button, Group, Title, Text, TextInput, SegmentedControl, Tabs } from '@mantine/core';
 import { Plus, Settings, Search, Check, Trash2, Copy, Edit } from 'lucide-react';
 import { notifications } from '@mantine/notifications';
-import { Model, ModelParameter } from '@/components/models/types';
 import { useLocalForage } from '@/common/utils';
+import { Model } from '@/types/model';
 import { ProviderIcon } from '@/components/models/model-list/ProviderIcon';
 import { ModelListItem } from '@/components/models/model-list/ModelListItem';
 import { ModelOverview } from '@/components/models/model-details/ModelOverview';
-import { ModelParameters } from '@/components/models/model-details/ModelParameters';
+import { ModelConfigForm } from '@/components/models/ModelConfigForm';
 import { GlobalSettings } from '@/components/models/global-settings/GlobalSettings';
-import { ModelEditForm } from '@/components/models/ModelEditForm';
 
 export function ModelsView() {
+  // State management
   const [selectedProvider, setSelectedProvider] = useState<string>('All');
   const [selectedModel, setSelectedModel] = useState<Model | null>(null);
   const [activeTab, setActiveTab] = useState<string | null>('overview');
   const [showGlobalSettings, setShowGlobalSettings] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedLocalModel, setSelectedLocalModel] = useLocalForage<Model | undefined>('selected-model', undefined);
 
+  // Local storage hooks
+  const [selectedLocalModel, setSelectedLocalModel] = useLocalForage<Model | undefined>('selected-model', undefined);
   const [modelsData, setModelsData] = useLocalForage<{ data: { models: Model[] } }>('models-data', {
     data: { models: [] }
   });
 
+  // Handler functions
   const handleSaveModel = (model: Model) => {
     const updatedModels = selectedModel
       ? modelsData.data.models.map(m => m.id === model.id ? model : m)
@@ -34,6 +36,11 @@ export function ModelsView() {
         models: updatedModels
       }
     });
+
+    // Update selected local model if it's the one being edited
+    if (selectedLocalModel?.id === model.id) {
+      setSelectedLocalModel(model);
+    }
 
     notifications.show({
       title: selectedModel ? 'Model Updated' : 'Model Added',
@@ -50,6 +57,11 @@ export function ModelsView() {
       m.id === model.id ? { ...m, isEnabled: enabled } : m
     );
     setModelsData({ data: { models: updatedModels } });
+
+    // Update selected local model if needed
+    if (selectedLocalModel?.id === model.id) {
+      setSelectedLocalModel({ ...model, isEnabled: enabled });
+    }
   };
 
   const handleDuplicate = (model: Model) => {
@@ -70,6 +82,11 @@ export function ModelsView() {
       }
     });
 
+    // Clear selected local model if it's the one being deleted
+    if (selectedLocalModel?.id === model.id) {
+      setSelectedLocalModel(undefined);
+    }
+
     notifications.show({
       title: 'Model Deleted',
       message: `Successfully deleted model ${model.name}`,
@@ -80,7 +97,7 @@ export function ModelsView() {
   };
 
   const handleSetDefault = (model: Model) => {
-    // Here you would implement the logic to set this model as default
+    setSelectedLocalModel(model);
     notifications.show({
       title: 'Default Model Set',
       message: `${model.name} is now the default model`,
@@ -88,57 +105,33 @@ export function ModelsView() {
     });
   };
 
-  const handleParameterUpdate = (model: Model, params: ModelParameter) => {
-    console.log('Before update - models:', modelsData.data.models);
-
-    const updatedModel = {
-      ...model,
-      parameters: { ...params }
-    };
-
-    const updatedModels = modelsData.data.models.map(m =>
-      m.id === model.id ? updatedModel : m
-    );
-
-    console.log('After update - updated model:', updatedModel);
-
-    setModelsData({
-      data: {
-        models: updatedModels
-      }
-    });
-
-    if (selectedLocalModel?.id === model.id) {
-      setSelectedLocalModel(updatedModel);
-    }
-
-    notifications.show({
-      title: 'Parameters Updated',
-      message: `Successfully updated parameters for ${model.name}`,
-      color: 'green',
-    });
-  };
-
+  // Filter models based on search and provider selection
   const filteredModels = modelsData.data.models.filter(model => {
     if (selectedProvider !== 'All' && model.provider !== selectedProvider) return false;
     if (searchQuery && !model.name.toLowerCase().includes(searchQuery.toLowerCase())) return false;
     return true;
   });
 
+  // Render edit form if editing
   if (isEditing) {
     return (
-      <div className="p-6">
-        <Title order={2} className="mb-6">{selectedModel ? 'Edit Model' : 'Add New Model'}</Title>
-        <ModelEditForm
-          model={selectedModel || undefined}
-          onSave={handleSaveModel}
-          onCancel={() => {
-            setIsEditing(false);
-            if (!selectedModel?.id) {
-              setSelectedModel(null);
-            }
-          }}
-        />
+      <div className="h-full flex flex-col">
+        <div className="flex items-center justify-between p-6 border-b border-light-border dark:border-dark-border bg-light-bg dark:bg-dark-bg">
+          <Title order={2}>{selectedModel ? 'Edit Model' : 'Add New Model'}</Title>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-6">
+          <ModelConfigForm
+            model={selectedModel || undefined}
+            onSave={handleSaveModel}
+            onCancel={() => {
+              setIsEditing(false);
+              if (!selectedModel?.id) {
+                setSelectedModel(null);
+              }
+            }}
+          />
+        </div>
       </div>
     );
   }
@@ -146,8 +139,8 @@ export function ModelsView() {
   return (
     <div className="h-full flex">
       {/* Left Sidebar */}
-      <div className="w-72 border-r border-gray-200 dark:border-gray-700 flex flex-col">
-        <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+      <div className="w-72 border-r border-light-border dark:border-dark-border flex flex-col">
+        <div className="p-4 border-b border-light-border dark:border-dark-border">
           <Button
             leftSection={<Settings size={16} />}
             variant="light"
@@ -183,9 +176,7 @@ export function ModelsView() {
             data={[
               { label: 'All', value: 'All' },
               { label: 'Custom', value: 'Custom' },
-              { label: 'Google', value: 'Google' },
-              { label: 'OpenAI', value: 'OpenAI' },
-              { label: 'Anthropic', value: 'Anthropic' },
+              { label: 'OpenAI', value: 'OpenAI' }
             ]}
             value={selectedProvider}
             onChange={setSelectedProvider}
@@ -259,7 +250,7 @@ export function ModelsView() {
               </Group>
             </div>
 
-            {/* Tabs */}
+            {/* Model Details */}
             <Tabs value={activeTab} onChange={setActiveTab}>
               <Tabs.List>
                 <Tabs.Tab value="overview">Overview</Tabs.Tab>
@@ -271,9 +262,10 @@ export function ModelsView() {
               </Tabs.Panel>
 
               <Tabs.Panel value="parameters" pt="md">
-                <ModelParameters
+                <ModelConfigForm
                   model={selectedModel}
-                  onUpdate={(params) => handleParameterUpdate(selectedModel, params)}
+                  onSave={handleSaveModel}
+                  onCancel={() => setActiveTab('overview')}
                 />
               </Tabs.Panel>
             </Tabs>

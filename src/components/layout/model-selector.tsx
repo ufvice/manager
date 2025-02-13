@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { ChevronDown } from 'lucide-react';
-import { Model } from '@/components/models/types';
+import { Model } from '@/types/model';
 import { useLocalForage } from '@/common/utils';
 
 interface ModelSelectorProps {

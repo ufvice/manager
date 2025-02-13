@@ -1,6 +1,6 @@
 // ModelEditForm.tsx
 import { useState } from 'react';
-import { API_TYPES, DEFAULT_PARAMETERS, PROVIDERS, type Model } from './types';
+import { API_TYPES, DEFAULT_PARAMETERS, PROVIDERS, type Model } from '@/types/model';
 
 interface ModelEditFormProps {
   model?: Model;
@@ -16,6 +16,7 @@ export function ModelEditForm({ model, onSave, onCancel }: ModelEditFormProps) {
     provider: 'Custom',
     contextLength: 4096,
     apiType: 'openai',
+    apiKey: '',
     pluginsSupported: false,
     visionSupported: false,
     streamingSupported: true,

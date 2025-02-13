@@ -1,4 +1,12 @@
-// types.ts
+export type ApiEndpoint = 'chat/completions' | 'completions' | 'embeddings';
+
+export interface ApiConfig {
+  baseUrl: string;
+  apiKey: string;
+  organizationId?: string;
+  projectId?: string;
+}
+
 export interface ModelParameter {
   contextLimit: string;
   temperature: number;
@@ -8,6 +16,8 @@ export interface ModelParameter {
   maxTokens: number;
   overrideGlobal: boolean;
   streamingEnabled: boolean;
+  headers?: Record<string, string>;
+  bodyParams?: Record<string, any>;
 }
 
 export interface Model {
@@ -15,6 +25,8 @@ export interface Model {
   name: string;
   modelId: string;
   provider: string;
+  endpoint: ApiEndpoint;
+  apiConfig: ApiConfig;
   contextLength: number;
   apiType: string;
   apiKey: string;
@@ -40,8 +52,10 @@ export const DEFAULT_PARAMETERS: ModelParameter = {
   topP: 1,
   maxTokens: 2048,
   overrideGlobal: false,
-  streamingEnabled: false  // Default value
+  streamingEnabled: true,
+  headers: {},
+  bodyParams: {}
 };
 
-export const API_TYPES = ["openai", "anthropic", "google", "custom"] as const;
-export const PROVIDERS = ["All", "Custom", "Google", "OpenAI", "Anthropic"] as const;
+export const API_TYPES = ["openai", "anthropic", "custom"] as const;
+export const PROVIDERS = ["OpenAI", "Custom"] as const;
