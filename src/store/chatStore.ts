@@ -212,7 +212,30 @@ export const useChatStore = create<ChatStore>()(
         const contextMessages = chat.messages.slice(0, msgIndex);
 
         try {
-          const aiResponse = await sendChatMessage(model, contextMessages);
+          const onProgress = model.parameters.streamingEnabled ?
+            (content: string) => {
+              set(state => ({
+                chats: state.chats.map((chat: Chat) =>
+                  chat.id === chatId
+                    ? {
+                      ...chat,
+                      messages: chat.messages.map((msg: Message, index: number) =>
+                        index === msgIndex
+                          ? {
+                            ...msg,
+                            content,
+                            timestamp: Date.now(),
+                            status: 'sending'
+                          }
+                          : msg
+                      )
+                    }
+                    : chat
+                )
+              }));
+            } : undefined;
+
+          const aiResponse = await sendChatMessage(model, contextMessages, onProgress);
 
           set(state => ({
             chats: state.chats.map((chat: Chat) =>
