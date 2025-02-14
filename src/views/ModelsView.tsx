@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button, Group, Title, Text, TextInput, SegmentedControl, Tabs } from '@mantine/core';
 import { Plus, Settings, Search, Check, Trash2, Copy, Edit } from 'lucide-react';
 import { notifications } from '@mantine/notifications';
@@ -9,6 +9,7 @@ import { ModelListItem } from '@/components/models/model-list/ModelListItem';
 import { ModelOverview } from '@/components/models/model-details/ModelOverview';
 import { ModelConfigForm } from '@/components/models/ModelConfigForm';
 import { GlobalSettings } from '@/components/models/global-settings/GlobalSettings';
+import { tomlService } from '@/services/tomlService';
 
 export function ModelsView() {
   // State management
@@ -25,8 +26,22 @@ export function ModelsView() {
     data: { models: [] }
   });
 
+  useEffect(() => {
+    loadModels();
+    const unsubscribe = tomlService.subscribe(async () => {
+      const models = await tomlService.getModels();
+      setModelsData({ data: { models: models as Model[] } });
+    });
+    return unsubscribe;
+  }, []);
+
+  const loadModels = async () => {
+    const models = await tomlService.getModels();
+    setModelsData({ data: { models: models as Model[] } });
+  };
+
   // Handler functions
-  const handleSaveModel = (model: Model) => {
+  const handleSaveModel = async (model: Model) => {
     const updatedModels = selectedModel
       ? modelsData.data.models.map(m => m.id === model.id ? model : m)
       : [...modelsData.data.models, model];
@@ -36,6 +51,8 @@ export function ModelsView() {
         models: updatedModels
       }
     });
+
+    await tomlService.updateModels(updatedModels);
 
     // Update selected local model if it's the one being edited
     if (selectedLocalModel?.id === model.id) {
@@ -52,11 +69,12 @@ export function ModelsView() {
     setSelectedModel(model);
   };
 
-  const handleToggleModelEnabled = (model: Model, enabled: boolean) => {
+  const handleToggleModelEnabled = async (model: Model, enabled: boolean) => {
     const updatedModels = modelsData.data.models.map(m =>
       m.id === model.id ? { ...m, isEnabled: enabled } : m
     );
     setModelsData({ data: { models: updatedModels } });
+    await tomlService.updateModels(updatedModels);
 
     // Update selected local model if needed
     if (selectedLocalModel?.id === model.id) {
@@ -74,13 +92,14 @@ export function ModelsView() {
     setIsEditing(true);
   };
 
-  const handleDelete = (model: Model) => {
+  const handleDelete = async (model: Model) => {
     const updatedModels = modelsData.data.models.filter(m => m.id !== model.id);
     setModelsData({
       data: {
         models: updatedModels
       }
     });
+    await tomlService.updateModels(updatedModels);
 
     // Clear selected local model if it's the one being deleted
     if (selectedLocalModel?.id === model.id) {

@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Tabs, TextInput, Switch, NumberInput, ColorInput, Select, Button, Stack, Title, Group } from '@mantine/core';
+import { Tabs, TextInput, Switch, NumberInput, ColorInput, Select, Button, Stack, Title, Group, Paper } from '@mantine/core';
 import { configService } from '@/services/configService';
 import { AppConfig, ConfigCategory } from '@/types/config';
 import { notifications } from '@mantine/notifications';
 import { Upload, Download, Save, X } from 'lucide-react';
+import { TomlEditor } from './TomlEditor';
+import { Model } from '@/types/model';
 
 export function ConfigPanel() {
   const [config, setConfig] = useState<AppConfig | null>(null);
@@ -97,6 +99,10 @@ export function ConfigPanel() {
     URL.revokeObjectURL(url);
   };
 
+  const handleModelsUpdate = (models: Model[]) => {
+    setModelsData({ data: { models } });
+  };
+
   if (!config) return null;
 
   return (
@@ -146,6 +152,7 @@ export function ConfigPanel() {
           <Tabs.Tab value="appearance">Appearance</Tabs.Tab>
           <Tabs.Tab value="keyboard">Keyboard</Tabs.Tab>
           <Tabs.Tab value="models">Models</Tabs.Tab>
+          <Tabs.Tab value="config">Configuration</Tabs.Tab>
         </Tabs.List>
 
         <Tabs.Panel value="general" pt="xl">
@@ -275,8 +282,6 @@ export function ConfigPanel() {
               label="System prompt"
               value={config.models.systemPrompt}
               onChange={(e) => handleConfigChange('models', 'systemPrompt', e.currentTarget.value)}
-              multiline
-              minRows={3}
             />
             <Switch
               label="Stream responses"
@@ -284,6 +289,12 @@ export function ConfigPanel() {
               onChange={(e) => handleConfigChange('models', 'streamResponse', e.currentTarget.checked)}
             />
           </Stack>
+        </Tabs.Panel>
+
+        <Tabs.Panel value="config" pt="xl">
+          <Paper p="md">
+            <TomlEditor onModelsUpdate={handleModelsUpdate} />
+          </Paper>
         </Tabs.Panel>
       </Tabs>
     </div>
