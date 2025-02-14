@@ -6,6 +6,7 @@ import { Routes, Route, Navigate, useLocation } from "react-router-dom"
 import { ExamplesView } from "@/views/ExampleView"
 import { ModelsView } from "@/views/ModelsView"
 import { NovelView } from "@/views/NovelView.tsx"
+import { ConfigPanel } from '@/components/settings/ConfigPanel';
 
 export function AppShell() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
@@ -44,6 +45,7 @@ export function AppShell() {
         />
         <Route path="*" element={<Navigate to="/" replace />} />
         <Route path="/novel" element={<NovelView />} />
+        <Route path="/settings" element={<ConfigPanel />} />
       </Routes>
     </div>
   )
